@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -22,10 +25,17 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+          glow: "hsl(var(--secondary-glow))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+          glow: "hsl(var(--success-glow))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -46,6 +56,7 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          glass: "hsl(var(--card-glass))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -57,6 +68,45 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        glass: {
+          bg: "hsl(var(--glass-bg))",
+          border: "hsl(var(--glass-border))",
+          shadow: "hsl(var(--glass-shadow))",
+        },
+        temperature: {
+          cold: "hsl(var(--temp-cold))",
+          warm: "hsl(var(--temp-warm))",
+          hot: "hsl(var(--temp-hot))",
+        },
+        social: {
+          whatsapp: "hsl(var(--whatsapp))",
+          instagram: "hsl(var(--instagram))",
+          linkedin: "hsl(var(--linkedin))",
+        },
+      },
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-secondary': 'var(--gradient-secondary)',
+        'gradient-success': 'var(--gradient-success)',
+        'gradient-background': 'var(--gradient-background)',
+        'gradient-glass': 'var(--gradient-glass)',
+      },
+      boxShadow: {
+        'glass': 'var(--shadow-glass)',
+        'glass-lg': 'var(--shadow-glass-lg)',
+        'glow-primary': 'var(--shadow-glow-primary)',
+        'glow-secondary': 'var(--shadow-glow-secondary)',
+        'glow-success': 'var(--shadow-glow-success)',
+      },
+      backdropBlur: {
+        'sm': 'var(--blur-sm)',
+        'md': 'var(--blur-md)',
+        'lg': 'var(--blur-lg)',
+        'xl': 'var(--blur-xl)',
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
       },
       borderRadius: {
         lg: "var(--radius)",

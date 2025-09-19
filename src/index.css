@@ -1,96 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* SocialFunnel Design System - Glassmorphism & Social Selling */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
+    /* Base Colors */
+    --background: 240 8% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Glass System Colors */
+    --glass-bg: 240 8% 12%;
+    --glass-border: 240 8% 20%;
+    --glass-shadow: 0 0% 0%;
 
-    --popover: 222.2 84% 4.9%;
+    /* Brand Colors - SocialFunnel */
+    --primary: 221 83% 53%; /* Blue #2563EB */
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 221 83% 60%;
+
+    --secondary: 261 86% 60%; /* Purple #7C3AED */
+    --secondary-foreground: 210 40% 98%;
+    --secondary-glow: 261 86% 70%;
+
+    --success: 173 58% 39%; /* Teal #14B8A6 */
+    --success-foreground: 210 40% 98%;
+    --success-glow: 173 58% 50%;
+
+    /* Glass Card System */
+    --card: 240 8% 12%;
+    --card-foreground: 210 40% 98%;
+    --card-glass: 240 8% 8%;
+
+    --popover: 240 8% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --muted: 240 8% 15%;
+    --muted-foreground: 215 20% 65%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 240 8% 15%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 240 8% 18%;
+    --input: 240 8% 15%;
+    --ring: 221 83% 53%;
+
+    /* Temperature Colors */
+    --temp-cold: 195 100% 50%;
+    --temp-warm: 39 100% 50%;
+    --temp-hot: 0 100% 50%;
+
+    /* Social Media Colors */
+    --whatsapp: 142 70% 49%;
+    --instagram: 317 67% 63%;
+    --linkedin: 201 100% 35%;
+
+    /* Glass Effects */
+    --blur-sm: 4px;
+    --blur-md: 8px;
+    --blur-lg: 12px;
+    --blur-xl: 16px;
+
+    --glass-opacity: 0.08;
+    --glass-border-opacity: 0.18;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-glow)));
+    --gradient-background: linear-gradient(135deg, hsl(240 8% 4%) 0%, hsl(240 8% 8%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+
+    /* Shadows */
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-glass-lg: 0 20px 50px rgba(0, 0, 0, 0.4);
+    --shadow-glow-primary: 0 0 30px hsl(var(--primary) / 0.3);
+    --shadow-glow-secondary: 0 0 30px hsl(var(--secondary) / 0.3);
+    --shadow-glow-success: 0 0 30px hsl(var(--success) / 0.3);
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 240 8% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 240 8% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 240 8% 16%;
+    --sidebar-ring: 221 83% 53%;
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
@@ -100,6 +108,77 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    background: var(--gradient-background);
+    background-attachment: fixed;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Glass morphism utilities */
+  .glass {
+    backdrop-filter: blur(var(--blur-md));
+    background: rgba(255, 255, 255, var(--glass-opacity));
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-lg {
+    backdrop-filter: blur(var(--blur-lg));
+    background: rgba(255, 255, 255, var(--glass-opacity));
+    border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
+    box-shadow: var(--shadow-glass-lg);
+  }
+
+  .glass-card {
+    backdrop-filter: blur(var(--blur-md));
+    background: hsl(var(--card-glass) / 0.8);
+    border: 1px solid hsl(var(--border) / 0.3);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.3);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.8);
+  }
+
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 20px hsl(var(--primary) / 0.2); }
+    to { box-shadow: 0 0 30px hsl(var(--primary) / 0.4); }
   }
 }
