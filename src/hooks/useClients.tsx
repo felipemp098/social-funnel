@@ -368,3 +368,59 @@ export function useClientSegments() {
   };
 }
 
+export interface ClientOption {
+  id: string;
+  name: string;
+}
+
+export function useClientsList() {
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase.rpc('list_clients', {
+        search_term: null,
+        segment_filter: null,
+        temperature_filter: null,
+        status_filter: null,
+      });
+
+      if (error) {
+        console.error('Erro ao buscar lista de clientes:', error);
+        setError(error.message);
+        return;
+      }
+
+      // Mapear para formato simplificado
+      const clientOptions: ClientOption[] = (data || []).map((client: any) => ({
+        id: client.id,
+        name: client.name
+      }));
+
+      setClients(clientOptions);
+    } catch (err) {
+      console.error('Erro inesperado ao buscar lista de clientes:', err);
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  return {
+    clients,
+    loading,
+    error,
+    refetch: fetchClients,
+  };
+}
+

@@ -11,6 +11,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DashboardDrilldown } from "@/components/DashboardDrilldown";
 import { DashboardChart } from "@/components/DashboardChart";
 import { useDashboard, dashboardUtils } from "@/hooks/useDashboard";
+import { useClientsList } from "@/hooks/useClients";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -186,6 +187,8 @@ interface FilterBarProps {
 }
 
 function FilterBar({ filters, onFiltersChange, availableSegments, loading }: FilterBarProps) {
+  // Hook para buscar lista de clientes
+  const { clients: clientsList, loading: clientsLoading } = useClientsList();
   // Converter filtros para DateRange
   const getDateRange = (): DateRange | undefined => {
     if (!filters.startDate || !filters.endDate) {
@@ -285,8 +288,26 @@ function FilterBar({ filters, onFiltersChange, availableSegments, loading }: Fil
             <SelectItem value="cold">❄️ Frio</SelectItem>
           </SelectContent>
         </Select>
+        
+        <Select 
+          value={filters.client_id || "all"} 
+          onValueChange={(value) => onFiltersChange({ client_id: value === "all" ? undefined : value })}
+          disabled={loading || clientsLoading}
+        >
+          <SelectTrigger className="w-48 bg-background/50">
+            <SelectValue placeholder="Todos os clientes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os clientes</SelectItem>
+            {clientsList.map((client) => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        {(filters.source || filters.segment || filters.temperature) && (
+        {(filters.source || filters.segment || filters.temperature || filters.client_id) && (
           <Button 
             variant="outline" 
             size="sm" 

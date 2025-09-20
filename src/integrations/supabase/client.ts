@@ -61,6 +61,7 @@ export interface DashboardFilters {
   segment?: string;
   temperature?: string;
   source?: string;
+  client_id?: string;
 }
 
 export interface DashboardMetrics {
@@ -160,6 +161,7 @@ export async function getDashboardMetrics(filters: DashboardFilters = {}): Promi
     filter_segment: filters.segment || null,
     filter_temperature: filters.temperature || null,
     filter_source: filters.source || null,
+    filter_client_id: filters.client_id || null,
   });
 
   if (error) {
@@ -194,6 +196,7 @@ export async function getDashboardDrilldown(
     filter_segment: filters.segment || null,
     filter_temperature: filters.temperature || null,
     filter_source: filters.source || null,
+    filter_client_id: filters.client_id || null,
   });
 
   if (error) {
@@ -224,6 +227,7 @@ export async function getDashboardDailyMetrics(filters: DashboardFilters = {}): 
     filter_segment: filters.segment || null,
     filter_temperature: filters.temperature || null,
     filter_source: filters.source || null,
+    filter_client_id: filters.client_id || null,
   });
 
   if (error) {
