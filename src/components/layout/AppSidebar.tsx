@@ -17,7 +17,8 @@ import {
   Settings,
   TrendingUp,
   MessageSquare,
-  Target
+  Target,
+  UserCog
 } from "lucide-react";
 
 const navigationItems = [
@@ -39,6 +40,18 @@ const navigationItems = [
     icon: Users,
     description: "Gestão de prospectos"
   },
+  {
+    title: "Usuários",
+    url: "/usuarios",
+    icon: UserCog,
+    description: "Gestão de usuários"
+  },
+  {
+    title: "Configurações",
+    url: "/configuracoes",
+    icon: Settings,
+    description: "Perfil, segurança e usuários"
+  },
 ];
 
 const futureItems = [
@@ -53,12 +66,6 @@ const futureItems = [
     url: "/relatorios",
     icon: TrendingUp,
     description: "Análises detalhadas"
-  },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
-    description: "Preferências do sistema"
   },
 ];
 

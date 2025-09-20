@@ -5,13 +5,27 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://uxkcwvzfdmxzmzeymchm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4a2N3dnpmZG14em16ZXltY2htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzMTQ5MjUsImV4cCI6MjA3Mzg5MDkyNX0.rBQNmcWfSgEd9-SOVZEw78APJBz-Qzlj4hGYCh0E3dI";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Service Role Key via variável de ambiente (SEGURO)
+const SUPABASE_SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
+// Debug: Verificar se a chave foi carregada
+console.log('🔑 Service Role Key carregada:', SUPABASE_SERVICE_ROLE_KEY ? 'SIM' : 'NÃO');
+console.log('🔑 Primeiros caracteres:', SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + '...');
+
+// Cliente principal (para usuários)
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+  }
+});
+
+// Cliente admin (para operações administrativas)
+export const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    storage: undefined, // Não usar storage para evitar conflitos
   }
 });

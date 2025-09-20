@@ -7,23 +7,403 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
   public: {
     Tables: {
-      [_ in never]: never
+      app_users: {
+        Row: {
+          id: string
+          email: string
+          role: 'admin' | 'manager' | 'user'
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          first_login: boolean
+        }
+        Insert: {
+          id: string
+          email: string
+          role?: 'admin' | 'manager' | 'user'
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          first_login?: boolean
+        }
+        Update: {
+          id?: string
+          email?: string
+          role?: 'admin' | 'manager' | 'user'
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          first_login?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_users_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_users_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      clients: {
+        Row: {
+          id: string
+          owner_id: string
+          name: string
+          segment: string | null
+          revenue_range: string | null
+          temperature: 'hot' | 'warm' | 'cold' | null
+          notes: string | null
+          active_prospects: number | null
+          conversion_rate: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          name: string
+          segment?: string | null
+          revenue_range?: string | null
+          temperature?: 'hot' | 'warm' | 'cold' | null
+          notes?: string | null
+          active_prospects?: number | null
+          conversion_rate?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          name?: string
+          segment?: string | null
+          revenue_range?: string | null
+          temperature?: 'hot' | 'warm' | 'cold' | null
+          notes?: string | null
+          active_prospects?: number | null
+          conversion_rate?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      goals: {
+        Row: {
+          id: string
+          owner_id: string
+          client_id: string | null
+          period_start: string
+          period_end: string
+          target_responses: number | null
+          target_meetings: number | null
+          target_sales: number | null
+          target_revenue: number | null
+          actual_responses: number | null
+          actual_meetings: number | null
+          actual_sales: number | null
+          actual_revenue: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          client_id?: string | null
+          period_start: string
+          period_end: string
+          target_responses?: number | null
+          target_meetings?: number | null
+          target_sales?: number | null
+          target_revenue?: number | null
+          actual_responses?: number | null
+          actual_meetings?: number | null
+          actual_sales?: number | null
+          actual_revenue?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          client_id?: string | null
+          period_start?: string
+          period_end?: string
+          target_responses?: number | null
+          target_meetings?: number | null
+          target_sales?: number | null
+          target_revenue?: number | null
+          actual_responses?: number | null
+          actual_meetings?: number | null
+          actual_sales?: number | null
+          actual_revenue?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      prospects: {
+        Row: {
+          id: number
+          owner_id: string
+          client_id: string | null
+          contact_name: string
+          contact_email: string | null
+          contact_phone: string | null
+          company: string | null
+          position: string | null
+          source: 'inbound' | 'outbound' | null
+          status: 'new' | 'contacted' | 'responded' | 'meeting_scheduled' | 'meeting_done' | 'proposal_sent' | 'won' | 'lost' | 'follow_up' | null
+          temperature: 'hot' | 'warm' | 'cold' | null
+          notes: string | null
+          last_contact_date: string | null
+          next_follow_up: string | null
+          deal_value: number | null
+          probability: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          owner_id: string
+          client_id?: string | null
+          contact_name: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          company?: string | null
+          position?: string | null
+          source?: 'inbound' | 'outbound' | null
+          status?: 'new' | 'contacted' | 'responded' | 'meeting_scheduled' | 'meeting_done' | 'proposal_sent' | 'won' | 'lost' | 'follow_up' | null
+          temperature?: 'hot' | 'warm' | 'cold' | null
+          notes?: string | null
+          last_contact_date?: string | null
+          next_follow_up?: string | null
+          deal_value?: number | null
+          probability?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          owner_id?: string
+          client_id?: string | null
+          contact_name?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          company?: string | null
+          position?: string | null
+          source?: 'inbound' | 'outbound' | null
+          status?: 'new' | 'contacted' | 'responded' | 'meeting_scheduled' | 'meeting_done' | 'proposal_sent' | 'won' | 'lost' | 'follow_up' | null
+          temperature?: 'hot' | 'warm' | 'cold' | null
+          notes?: string | null
+          last_contact_date?: string | null
+          next_follow_up?: string | null
+          deal_value?: number | null
+          probability?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          phone: string | null
+          avatar_url: string | null
+          bio: string | null
+          preferences: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          phone?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          preferences?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          phone?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          preferences?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      user_hierarchy_stats: {
+        Row: {
+          id: string | null
+          email: string | null
+          role: 'admin' | 'manager' | 'user' | null
+          created_by: string | null
+          path: string | null
+          level: number | null
+          ancestors: string[] | null
+          total_prospects: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
+      user_prospect_stats: {
+        Row: {
+          owner_id: string | null
+          owner_email: string | null
+          owner_role: 'admin' | 'manager' | 'user' | null
+          total_prospects: number | null
+          inbound_prospects: number | null
+          outbound_prospects: number | null
+          won_prospects: number | null
+          lost_prospects: number | null
+          avg_deal_value: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          id: string | null
+          email: string | null
+          role: 'admin' | 'manager' | 'user' | null
+          created_by: string | null
+          user_created_at: string | null
+          user_updated_at: string | null
+          full_name: string | null
+          phone: string | null
+          avatar_url: string | null
+          bio: string | null
+          preferences: Json | null
+          profile_created_at: string | null
+          profile_updated_at: string | null
+          display_name: string | null
+          effective_avatar: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      can_manage: {
+        Args: {
+          actor: string
+          owner: string
+        }
+        Returns: boolean
+      }
+      create_sample_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_user_descendants: {
+        Args: {
+          user_id: string
+        }
+        Returns: {
+          id: string
+          email: string
+          role: 'admin' | 'manager' | 'user'
+          created_by: string
+          level: number
+        }[]
+      }
+      get_user_hierarchy_path: {
+        Args: {
+          user_id: string
+        }
+        Returns: string
+      }
+      is_admin: {
+        Args: {
+          uid: string
+        }
+        Returns: boolean
+      }
+      is_ancestor: {
+        Args: {
+          ancestor: string
+          descendant: string
+        }
+        Returns: boolean
+      }
+      promote_to_admin: {
+        Args: {
+          user_email: string
+        }
+        Returns: boolean
+      }
+      validate_user_creation: {
+        Args: {
+          creator_id: string
+          new_role: 'admin' | 'manager' | 'user'
+          new_created_by: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: 'admin' | 'manager' | 'user'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -31,125 +411,67 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+// Tipos de conveniência
+export type UserRole = Database['public']['Enums']['user_role']
+export type AppUser = Database['public']['Tables']['app_users']['Row']
+export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Client = Database['public']['Tables']['clients']['Row']
+export type Prospect = Database['public']['Tables']['prospects']['Row']
+export type Goal = Database['public']['Tables']['goals']['Row']
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+// Tipos para inserção
+export type AppUserInsert = Database['public']['Tables']['app_users']['Insert']
+export type ProfileInsert = Database['public']['Tables']['profiles']['Insert']
+export type ClientInsert = Database['public']['Tables']['clients']['Insert']
+export type ProspectInsert = Database['public']['Tables']['prospects']['Insert']
+export type GoalInsert = Database['public']['Tables']['goals']['Insert']
 
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+// Tipos para atualização
+export type AppUserUpdate = Database['public']['Tables']['app_users']['Update']
+export type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
+export type ClientUpdate = Database['public']['Tables']['clients']['Update']
+export type ProspectUpdate = Database['public']['Tables']['prospects']['Update']
+export type GoalUpdate = Database['public']['Tables']['goals']['Update']
+
+// Tipos para views
+export type UserHierarchyStats = Database['public']['Views']['user_hierarchy_stats']['Row']
+export type UserProspectStats = Database['public']['Views']['user_prospect_stats']['Row']
+export type UserProfile = Database['public']['Views']['user_profiles']['Row']
+
+// Tipos estendidos com relacionamentos
+export type AppUserWithCreator = AppUser & {
+  creator?: AppUser
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
 
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+export type ClientWithOwner = Client & {
+  owner: AppUser
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
 
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+export type ProspectWithRelations = Prospect & {
+  owner: AppUser
+  client?: Client
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
 
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+export type GoalWithRelations = Goal & {
+  owner: AppUser
+  client?: Client
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
 
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+// Tipos para formulários
+export type CreateUserForm = {
+  email: string
+  role: UserRole
+  created_by?: string
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+
+export type CreateClientForm = Omit<ClientInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+export type CreateProspectForm = Omit<ProspectInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+export type CreateGoalForm = Omit<GoalInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ['admin', 'manager', 'user'] as const,
+    },
   },
 } as const
