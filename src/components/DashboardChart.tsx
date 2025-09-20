@@ -129,22 +129,39 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
   const maxValue = Math.max(...currentData);
   const minValue = Math.min(...currentData.filter(v => v > 0));
 
-  // Função para calcular altura baseada no valor
-  const calculateHeight = (value: number): number => {
+  // Função para calcular altura - ESCALA EXTREMAMENTE DRAMÁTICA
+  const calculateHeight = (value: number, forBars: boolean = false): number => {
     if (value <= 0 || maxValue <= 0) return 0;
     
     const normalizedValue = value / maxValue;
-    if (normalizedValue === 1) return 90;
-    if (normalizedValue >= 0.9) return 75;
-    if (normalizedValue >= 0.8) return 60;
-    if (normalizedValue >= 0.7) return 45;
-    if (normalizedValue >= 0.6) return 35;
-    if (normalizedValue >= 0.5) return 28;
-    if (normalizedValue >= 0.4) return 22;
-    if (normalizedValue >= 0.3) return 17;
-    if (normalizedValue >= 0.2) return 12;
-    if (normalizedValue >= 0.1) return 8;
-    return 5;
+    
+    if (forBars) {
+      // Escala ABSURDAMENTE EXTREMA para barras
+      if (normalizedValue === 1) return 95;        // 100% → 95%
+      if (normalizedValue >= 0.9) return 70;       // 90%+ → 70%
+      if (normalizedValue >= 0.8) return 45;       // 80%+ → 45%
+      if (normalizedValue >= 0.7) return 30;       // 70%+ → 30%
+      if (normalizedValue >= 0.6) return 20;       // 60%+ → 20%
+      if (normalizedValue >= 0.5) return 15;       // 50%+ → 15%
+      if (normalizedValue >= 0.4) return 12;       // 40%+ → 12%
+      if (normalizedValue >= 0.3) return 9;        // 30%+ → 9%
+      if (normalizedValue >= 0.2) return 7;        // 20%+ → 7%
+      if (normalizedValue >= 0.1) return 5;        // 10%+ → 5%
+      return 3;                                     // <10% → 3%
+    } else {
+      // Escala normal para linha (já funcionando)
+      if (normalizedValue === 1) return 95;
+      if (normalizedValue >= 0.9) return 80;
+      if (normalizedValue >= 0.8) return 65;
+      if (normalizedValue >= 0.7) return 50;
+      if (normalizedValue >= 0.6) return 38;
+      if (normalizedValue >= 0.5) return 28;
+      if (normalizedValue >= 0.4) return 20;
+      if (normalizedValue >= 0.3) return 14;
+      if (normalizedValue >= 0.2) return 10;
+      if (normalizedValue >= 0.1) return 6;
+      return 3;
+    }
   };
 
   return (
@@ -191,13 +208,14 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
         </div>
 
         {/* Chart Area */}
-        <div className="relative h-64 p-4 rounded-lg" style={{ backgroundColor: currentConfig.bgColor }}>
+        <div className={`relative p-4 rounded-lg ${chartType === 'bar' ? 'h-80' : 'h-64'}`} style={{ backgroundColor: currentConfig.bgColor }}>
           {chartType === 'bar' ? (
             /* Modo Barras */
             <div className="flex items-end justify-between h-full space-x-1">
               {data.labels.map((label, index) => {
                 const value = currentData[index];
-                const height = calculateHeight(value);
+                const height = calculateHeight(value, true); // Escala extrema para barras
+                
                 
                 return (
                   <div key={index} className="flex flex-col items-center flex-1">
@@ -205,9 +223,8 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
                       <div
                         className="w-full min-w-[12px] rounded-t transition-all duration-300 hover:opacity-80 cursor-pointer"
                         style={{
-                          height: `${height}%`,
+                          height: `${Math.max(height * 2.4, 8)}px`, // Converter % para pixels (240px = 100%)
                           backgroundColor: currentConfig.color,
-                          minHeight: value > 0 ? '8px' : '0px',
                         }}
                         title={`${label}: ${selectedMetric === 'faturamento' ? dashboardUtils.formatCurrency(value) : value}`}
                       />
