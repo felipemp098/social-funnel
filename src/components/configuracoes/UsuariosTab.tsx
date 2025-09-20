@@ -323,7 +323,7 @@ export default function UsuariosTab() {
       }
 
       // Criar usuário usando Service Role
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabaseAdmin().auth.admin.createUser({
         email: createForm.email.trim(),
         password: shouldSendInvite ? undefined : password,
         email_confirm: true, // SEMPRE confirmar email automaticamente
@@ -360,7 +360,7 @@ export default function UsuariosTab() {
         });
 
       if (appUserError) {
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        await supabaseAdmin().auth.admin.deleteUser(authData.user.id);
         throw appUserError;
       }
 
@@ -424,7 +424,7 @@ export default function UsuariosTab() {
 
       // Deletar do auth.users usando Service Role
       try {
-        await supabaseAdmin.auth.admin.deleteUser(userToDelete.id);
+        await supabaseAdmin().auth.admin.deleteUser(userToDelete.id);
         console.log('✅ Usuário deletado do auth.users');
       } catch (authError) {
         console.warn('⚠️ Não foi possível deletar do auth.users:', authError);
@@ -476,7 +476,7 @@ export default function UsuariosTab() {
 
       // Resetar senha se solicitado
       if (editForm.shouldResetPassword && editForm.newPassword.trim()) {
-        const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(
+        const { error: passwordError } = await supabaseAdmin().auth.admin.updateUserById(
           editingUser.id,
           { password: editForm.newPassword }
         );

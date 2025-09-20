@@ -301,6 +301,47 @@ export type Database = {
           }
         ]
       }
+      scripts: {
+        Row: {
+          id: string
+          owner_id: string
+          title: string
+          tags: string[] | null
+          content: string
+          visibility: 'private' | 'team' | 'public'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          title: string
+          tags?: string[] | null
+          content?: string
+          visibility?: 'private' | 'team' | 'public'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          title?: string
+          tags?: string[] | null
+          content?: string
+          visibility?: 'private' | 'team' | 'public'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scripts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       user_hierarchy_stats: {
@@ -422,11 +463,13 @@ export type Database = {
 
 // Tipos de conveniência
 export type UserRole = Database['public']['Enums']['user_role']
+export type ScriptVisibility = 'private' | 'public'
 export type AppUser = Database['public']['Tables']['app_users']['Row']
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Client = Database['public']['Tables']['clients']['Row']
 export type Prospect = Database['public']['Tables']['prospects']['Row']
 export type Goal = Database['public']['Tables']['goals']['Row']
+export type Script = Database['public']['Tables']['scripts']['Row']
 
 // Tipos para inserção
 export type AppUserInsert = Database['public']['Tables']['app_users']['Insert']
@@ -434,6 +477,7 @@ export type ProfileInsert = Database['public']['Tables']['profiles']['Insert']
 export type ClientInsert = Database['public']['Tables']['clients']['Insert']
 export type ProspectInsert = Database['public']['Tables']['prospects']['Insert']
 export type GoalInsert = Database['public']['Tables']['goals']['Insert']
+export type ScriptInsert = Database['public']['Tables']['scripts']['Insert']
 
 // Tipos para atualização
 export type AppUserUpdate = Database['public']['Tables']['app_users']['Update']
@@ -441,6 +485,7 @@ export type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 export type ClientUpdate = Database['public']['Tables']['clients']['Update']
 export type ProspectUpdate = Database['public']['Tables']['prospects']['Update']
 export type GoalUpdate = Database['public']['Tables']['goals']['Update']
+export type ScriptUpdate = Database['public']['Tables']['scripts']['Update']
 
 // Tipos para views
 export type UserHierarchyStats = Database['public']['Views']['user_hierarchy_stats']['Row']
@@ -466,6 +511,10 @@ export type GoalWithRelations = Goal & {
   client?: Client
 }
 
+export type ScriptWithOwner = Script & {
+  owner: AppUser
+}
+
 // Tipos para formulários
 export type CreateUserForm = {
   email: string
@@ -476,6 +525,7 @@ export type CreateUserForm = {
 export type CreateClientForm = Omit<ClientInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 export type CreateProspectForm = Omit<ProspectInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 export type CreateGoalForm = Omit<GoalInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+export type CreateScriptForm = Omit<ScriptInsert, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 
 export const Constants = {
   public: {

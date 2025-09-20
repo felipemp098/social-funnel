@@ -201,7 +201,7 @@ BEGIN
         s.created_at,
         s.updated_at
     FROM public.scripts s
-    JOIN public.app_users au ON s.owner_id = au.id
+    JOIN public.user_profiles au ON s.owner_id = au.id
     WHERE 
         (visibility_filter IS NULL OR s.visibility = visibility_filter)
         AND (search_term IS NULL OR (
@@ -244,7 +244,7 @@ BEGIN
         s.created_at,
         s.updated_at
     FROM public.scripts s
-    JOIN public.app_users au ON s.owner_id = au.id
+    JOIN public.user_profiles au ON s.owner_id = au.id
     WHERE s.id = script_id;
 END;
 $$;
@@ -364,7 +364,7 @@ BEGIN
         (SELECT COUNT(*) FROM public.scripts WHERE owner_id = auth.uid()) as my_scripts,
         (SELECT COUNT(*) FROM public.scripts WHERE visibility = 'team' AND public.can_view_script(auth.uid(), owner_id, visibility)) as team_scripts,
         (SELECT COUNT(*) FROM public.scripts WHERE visibility = 'public') as public_scripts,
-        (SELECT COUNT(DISTINCT unnest(tags)) FROM public.scripts WHERE public.can_view_script(auth.uid(), owner_id, visibility)) as total_tags;
+        (SELECT COUNT(DISTINCT tag) FROM public.scripts, unnest(tags) as tag WHERE public.can_view_script(auth.uid(), owner_id, visibility)) as total_tags;
 END;
 $$;
 

@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   MessageSquare, 
   Copy, 
@@ -11,139 +14,78 @@ import {
   Plus,
   Calendar,
   Hash,
-  CheckCircle
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  Filter,
+  Lock,
+  Users,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
+import { useScripts } from "@/hooks/useScripts";
+import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ScriptDialog } from "@/components/ScriptDialog";
+import { ScriptDetailsDrawer } from "@/components/ScriptDetailsDrawer";
+import { DeleteScriptDialog } from "@/components/DeleteScriptDialog";
+import type { ScriptVisibility } from "@/integrations/supabase/types";
 
-// Mock data
-const scriptsData = [
-  {
-    id: 1,
-    title: "Primeira Abordagem WhatsApp",
-    tags: ["WhatsApp", "Cold Outreach"],
-    lastUpdated: "2024-01-15",
-    content: `Olá [NOME],
-
-Tudo bem? Sou [SEU_NOME] da [EMPRESA].
-
-Vi que você trabalha com [ÁREA/NICHO] e fiquei interessado em entender melhor como funciona o processo de [PROCESSO_ESPECÍFICO] na sua empresa.
-
-Será que você teria 15 minutos essa semana para uma conversa rápida? Posso te apresentar uma solução que tem ajudado empresas similares à sua a [BENEFÍCIO_ESPECÍFICO].
-
-Quando seria um bom momento para você?
-
-Abraços!`,
-    category: "Outbound"
-  },
-  {
-    id: 2,
-    title: "Follow-up Pós Reunião",
-    tags: ["E-mail", "Follow-up"],
-    lastUpdated: "2024-01-14",
-    content: `Assunto: Obrigado pela reunião - Próximos passos
-
-Olá [NOME],
-
-Obrigado pelo tempo dedicado hoje para nossa conversa sobre [TÓPICO_PRINCIPAL].
-
-Conforme conversamos, vou preparar uma proposta personalizada considerando:
-• [PONTO_1_DISCUTIDO]
-• [PONTO_2_DISCUTIDO]  
-• [PONTO_3_DISCUTIDO]
-
-Pretendo enviar até [DATA] para sua análise.
-
-Alguma informação adicional que preciso considerar?
-
-Atenciosamente,
-[SEU_NOME]`,
-    category: "Follow-up"
-  },
-  {
-    id: 3,
-    title: "Proposta de Valor - SaaS",
-    tags: ["LinkedIn", "Value Proposition"],
-    lastUpdated: "2024-01-12",
-    content: `Olá [NOME],
-
-Parabéns pelo crescimento da [EMPRESA]! Vi que vocês expandiram [INFORMAÇÃO_ESPECÍFICA].
-
-Trabalho com soluções de [SUA_ÁREA] e tenho ajudado empresas como [REFERÊNCIA] a:
-
-✅ Reduzir em 40% o tempo gasto em [PROCESSO]
-✅ Aumentar em 25% a eficiência de [ÁREA]
-✅ Economizar R$ XX.XXX por mês em [CUSTO]
-
-Vale uma conversa de 10 minutos para entender se faz sentido para vocês também?
-
-Sucesso!`,
-    category: "LinkedIn"
-  },
-  {
-    id: 4,
-    title: "Reativação de Lead Frio",
-    tags: ["WhatsApp", "Reativação"],
-    lastUpdated: "2024-01-10",
-    content: `Oi [NOME], tudo bem?
-
-Faz um tempo que conversamos sobre [TÓPICO_ANTERIOR].
-
-Como andam as coisas por aí com [ÁREA_ESPECÍFICA]?
-
-Aproveitando, temos algumas novidades que podem ser interessantes para [EMPRESA]:
-• [NOVIDADE_1]
-• [NOVIDADE_2]
-
-Que tal retomarmos nossa conversa? 😊`,
-    category: "Reativação"
-  },
-  {
-    id: 5,
-    title: "Agendamento de Demo",
-    tags: ["E-mail", "Demo"],
-    lastUpdated: "2024-01-08",
-    content: `Assunto: Demo personalizada - [EMPRESA]
-
-Olá [NOME],
-
-Conforme conversamos, vou apresentar como nossa solução pode ajudar a [EMPRESA] a [OBJETIVO_ESPECÍFICO].
-
-Sugiro os seguintes horários:
-• [DATA_1] às [HORÁRIO_1]
-• [DATA_2] às [HORÁRIO_2]
-• [DATA_3] às [HORÁRIO_3]
-
-A demo vai durar cerca de 20 minutos e vou focar nos pontos que mais fazem sentido para seu cenário.
-
-Confirma qual horário funciona melhor?
-
-Link da reunião: [LINK_ZOOM/MEET]
-
-Abraços!`,
-    category: "Demo"
-  }
-];
-
-interface ScriptCardProps {
-  script: typeof scriptsData[0];
-  onCopy: () => void;
-  onView: () => void;
+// Componente de loading skeleton
+function ScriptCardSkeleton() {
+  return (
+    <GlassCard>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/4 mb-3" />
+            <div className="flex gap-2 mb-3">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
+            </div>
+          </div>
+          <Skeleton className="w-5 h-5" />
+        </div>
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <div className="flex items-center justify-between pt-2 border-t border-border/30">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
 }
 
-function ScriptCard({ script, onCopy, onView }: ScriptCardProps) {
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      "Outbound": "bg-secondary/20 text-secondary border-secondary/30",
-      "Follow-up": "bg-primary/20 text-primary border-primary/30",
-      "LinkedIn": "bg-social-linkedin/20 text-blue-400 border-blue-400/30",
-      "Reativação": "bg-orange-500/20 text-orange-400 border-orange-400/30",
-      "Demo": "bg-success/20 text-success border-success/30",
-    };
-    return colors[category as keyof typeof colors] || "bg-muted text-muted-foreground";
+// Componente do card do script
+interface ScriptCardProps {
+  script: any; // ScriptWithOwner
+  onCopy: () => void;
+  onView: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}
+
+function ScriptCard({ script, onCopy, onView, onEdit, onDelete }: ScriptCardProps) {
+  const { user } = useAuth();
+  const { canManage } = usePermissions();
+
+  const getVisibilityInfo = (visibility: ScriptVisibility) => {
+    switch (visibility) {
+      case 'private':
+        return { icon: Lock, color: 'bg-muted text-muted-foreground' };
+      case 'public':
+        return { icon: Globe, color: 'bg-success/20 text-success border-success/30' };
+      default:
+        return { icon: Lock, color: 'bg-muted text-muted-foreground' };
+    }
   };
 
   const getTagColor = (tag: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       "WhatsApp": "bg-social-whatsapp/20 text-green-400 border-green-400/30",
       "E-mail": "bg-blue-500/20 text-blue-400 border-blue-400/30",
       "LinkedIn": "bg-social-linkedin/20 text-blue-400 border-blue-400/30",
@@ -153,8 +95,12 @@ function ScriptCard({ script, onCopy, onView }: ScriptCardProps) {
       "Reativação": "bg-orange-500/20 text-orange-400 border-orange-400/30",
       "Demo": "bg-purple-500/20 text-purple-400 border-purple-400/30",
     };
-    return colors[tag as keyof typeof colors] || "bg-muted text-muted-foreground";
+    return colors[tag] || "bg-muted text-muted-foreground";
   };
+
+  const visibilityInfo = getVisibilityInfo(script.visibility);
+  const canEdit = canManage(script.owner_id);
+  const canDelete = canManage(script.owner_id);
 
   return (
     <GlassCard hover glow="primary" className="group">
@@ -167,23 +113,34 @@ function ScriptCard({ script, onCopy, onView }: ScriptCardProps) {
             </h3>
             
             <div className="flex items-center gap-2 mb-3">
-              <Badge className={getCategoryColor(script.category)}>
-                {script.category}
+              <Badge className={visibilityInfo?.color || 'bg-muted text-muted-foreground'}>
+                {visibilityInfo?.icon ? <visibilityInfo.icon className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+                {script.visibility === 'private' ? 'Privado' : 'Público'}
               </Badge>
+              <span className="text-xs text-muted-foreground">
+                por {script.owner_name}
+              </span>
             </div>
             
-            <div className="flex flex-wrap gap-2 mb-3">
-              {script.tags.map((tag) => (
-                <Badge 
-                  key={tag} 
-                  variant="outline" 
-                  className={`text-xs ${getTagColor(tag)}`}
-                >
-                  <Hash className="w-3 h-3 mr-1" />
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+            {script.tags && script.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {script.tags.slice(0, 3).map((tag) => (
+                  <Badge 
+                    key={tag} 
+                    variant="outline" 
+                    className={`text-xs ${getTagColor(tag)}`}
+                  >
+                    <Hash className="w-3 h-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
+                {script.tags.length > 3 && (
+                  <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
+                    +{script.tags.length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
           
           <MessageSquare className="w-5 h-5 text-muted-foreground" />
@@ -192,7 +149,7 @@ function ScriptCard({ script, onCopy, onView }: ScriptCardProps) {
         {/* Content Preview */}
         <div className="bg-background/30 rounded-lg p-3 border border-border/30">
           <p className="text-sm text-muted-foreground line-clamp-3">
-            {script.content.substring(0, 120)}...
+            {script.content ? script.content.substring(0, 120) + '...' : 'Nenhum conteúdo definido.'}
           </p>
         </div>
 
@@ -200,7 +157,7 @@ function ScriptCard({ script, onCopy, onView }: ScriptCardProps) {
         <div className="flex items-center justify-between pt-2 border-t border-border/30">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="w-3 h-3" />
-            <span>Atualizado em {new Date(script.lastUpdated).toLocaleDateString('pt-BR')}</span>
+            <span>Atualizado em {new Date(script.updated_at).toLocaleDateString('pt-BR')}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -229,7 +186,7 @@ function ScriptCard({ script, onCopy, onView }: ScriptCardProps) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onCreateScript }: { onCreateScript: () => void }) {
   return (
     <GlassCard className="col-span-full">
       <div className="text-center py-12">
@@ -238,9 +195,9 @@ function EmptyState() {
           Nenhum script encontrado
         </h3>
         <p className="text-muted-foreground mb-6">
-          Adicione seu primeiro script para começar a padronizar suas abordagens
+          Clique em "Novo Script" para começar a criar seus templates de social selling
         </p>
-        <Button className="bg-gradient-primary">
+        <Button className="bg-gradient-primary" onClick={onCreateScript}>
           <Plus className="w-4 h-4 mr-2" />
           Criar Primeiro Script
         </Button>
@@ -249,37 +206,130 @@ function EmptyState() {
   );
 }
 
+function ErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <GlassCard className="col-span-full">
+      <div className="text-center py-12">
+        <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Erro ao carregar scripts
+        </h3>
+        <p className="text-muted-foreground mb-6">
+          {error}
+        </p>
+        <Button variant="outline" onClick={onRetry}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Tentar Novamente
+        </Button>
+      </div>
+    </GlassCard>
+  );
+}
+
 export default function Scripts() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredScripts, setFilteredScripts] = useState(scriptsData);
+  const [tagFilter, setTagFilter] = useState("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<ScriptVisibility | "all">("all");
+  const [selectedScript, setSelectedScript] = useState<any>(null);
+  const [editingScript, setEditingScript] = useState<any>(null);
+  const [deletingScript, setDeletingScript] = useState<any>(null);
+  const [showScriptDialog, setShowScriptDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    if (term.trim() === "") {
-      setFilteredScripts(scriptsData);
-    } else {
-      const filtered = scriptsData.filter(script =>
-        script.title.toLowerCase().includes(term.toLowerCase()) ||
-        script.tags.some(tag => tag.toLowerCase().includes(term.toLowerCase())) ||
-        script.category.toLowerCase().includes(term.toLowerCase())
-      );
-      setFilteredScripts(filtered);
-    }
+  const { user } = useAuth();
+  const { canManage } = usePermissions();
+  
+  const {
+    scripts,
+    stats,
+    loading,
+    error,
+    fetchScripts,
+    fetchScript,
+    createScript,
+    updateScript,
+    deleteScript,
+    clearError
+  } = useScripts();
+
+  // Buscar scripts com filtros
+  const handleSearch = () => {
+    const filters = {
+      search: searchTerm.trim() || undefined,
+      tag: tagFilter === "all" ? undefined : tagFilter,
+      visibility: visibilityFilter === "all" ? undefined : visibilityFilter
+    };
+    fetchScripts(filters);
   };
 
-  const handleCopyScript = (script: typeof scriptsData[0]) => {
+  // Buscar automaticamente quando filtros mudarem
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleSearch();
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, tagFilter, visibilityFilter]);
+
+  const handleCopyScript = (script: any) => {
     navigator.clipboard.writeText(script.content);
     toast.success("Script copiado!", {
       description: `${script.title} foi copiado para a área de transferência.`,
     });
   };
 
-  const handleViewScript = (script: typeof scriptsData[0]) => {
-    // TODO: Implementar modal/drawer com o conteúdo completo
-    toast.info("Visualização em breve", {
-      description: "Modal de visualização será implementado na próxima versão.",
-    });
+  const handleViewScript = async (script: any) => {
+    await fetchScript(script.id);
+    setSelectedScript(script);
   };
+
+  const handleEditScript = (script: any) => {
+    setEditingScript(script);
+    setShowScriptDialog(true);
+  };
+
+  const handleDeleteScript = (script: any) => {
+    setDeletingScript(script);
+    setShowDeleteDialog(true);
+  };
+
+  const handleCreateScript = () => {
+    setEditingScript(null);
+    setShowScriptDialog(true);
+  };
+
+  const handleSubmitScript = async (data: any) => {
+    let success = false;
+    
+    if (editingScript) {
+      success = await updateScript(editingScript.id, data);
+    } else {
+      success = await createScript(data);
+    }
+    
+    return success;
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deletingScript) {
+      const success = await deleteScript(deletingScript.id);
+      if (success) {
+        setShowDeleteDialog(false);
+        setDeletingScript(null);
+        setSelectedScript(null);
+      }
+    }
+  };
+
+  const handleRetry = () => {
+    clearError();
+    handleSearch();
+  };
+
+  // Extrair tags únicas dos scripts para o filtro
+  const availableTags = Array.from(
+    new Set(scripts.flatMap(script => script.tags || []))
+  ).sort();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -292,7 +342,10 @@ export default function Scripts() {
           </p>
         </div>
         
-        <Button className="bg-gradient-primary hover:scale-105 transition-transform">
+        <Button 
+          className="bg-gradient-primary hover:scale-105 transition-transform"
+          onClick={handleCreateScript}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Script
         </Button>
@@ -300,43 +353,75 @@ export default function Scripts() {
 
       {/* Search & Filters */}
       <GlassCard>
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Buscar por título, categoria ou tag..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 bg-background/50"
-            />
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Buscar por título ou conteúdo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-background/50"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle className="w-4 h-4 text-success" />
+              <span>{scripts.length} scripts encontrados</span>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle className="w-4 h-4 text-success" />
-            <span>{filteredScripts.length} scripts encontrados</span>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Filtros:</span>
+            </div>
+            
+            <Select value={tagFilter} onValueChange={setTagFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as tags</SelectItem>
+                {availableTags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    {tag}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={visibilityFilter} onValueChange={(value) => setVisibilityFilter(value as ScriptVisibility | "all")}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtrar por visibilidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as visibilidades</SelectItem>
+                <SelectItem value="private">Privado</SelectItem>
+                <SelectItem value="public">Público</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </GlassCard>
 
-      {/* Scripts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredScripts.length > 0 ? (
-          filteredScripts.map((script) => (
-            <ScriptCard
-              key={script.id}
-              script={script}
-              onCopy={() => handleCopyScript(script)}
-              onView={() => handleViewScript(script)}
-            />
-          ))
-        ) : (
-          <EmptyState />
-        )}
-      </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ScriptCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <ErrorState error={error} onRetry={handleRetry} />
+      )}
 
       {/* Statistics */}
-      {scriptsData.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <GlassCard>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
@@ -344,7 +429,7 @@ export default function Scripts() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total de Scripts</p>
-                <p className="text-2xl font-bold text-foreground">{scriptsData.length}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total_scripts}</p>
               </div>
             </div>
           </GlassCard>
@@ -352,13 +437,11 @@ export default function Scripts() {
           <GlassCard>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-secondary flex items-center justify-center">
-                <Hash className="w-5 h-5 text-secondary-foreground" />
+                <Users className="w-5 h-5 text-secondary-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Categorias</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {new Set(scriptsData.map(s => s.category)).size}
-                </p>
+                <p className="text-sm text-muted-foreground">Meus Scripts</p>
+                <p className="text-2xl font-bold text-foreground">{stats.my_scripts}</p>
               </div>
             </div>
           </GlassCard>
@@ -366,16 +449,85 @@ export default function Scripts() {
           <GlassCard>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-success flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-success-foreground" />
+                <Globe className="w-5 h-5 text-success-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Última Atualização</p>
-                <p className="text-lg font-semibold text-foreground">Hoje</p>
+                <p className="text-sm text-muted-foreground">Scripts Públicos</p>
+                <p className="text-2xl font-bold text-foreground">{stats.public_scripts}</p>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
+                <Hash className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Tags Únicas</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total_tags}</p>
               </div>
             </div>
           </GlassCard>
         </div>
       )}
+
+      {/* Empty State */}
+      {!loading && !error && scripts.length === 0 && (
+        <EmptyState onCreateScript={handleCreateScript} />
+      )}
+
+      {/* Scripts Grid */}
+      {!loading && !error && scripts.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {scripts.map((script) => (
+            <ScriptCard
+              key={script.id}
+              script={script}
+              onCopy={() => handleCopyScript(script)}
+              onView={() => handleViewScript(script)}
+              onEdit={() => handleEditScript(script)}
+              onDelete={() => handleDeleteScript(script)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Script Dialog */}
+      <ScriptDialog
+        open={showScriptDialog}
+        onOpenChange={setShowScriptDialog}
+        script={editingScript}
+        onSubmit={handleSubmitScript}
+        loading={loading}
+      />
+
+      {/* Script Details Drawer */}
+      <ScriptDetailsDrawer
+        script={selectedScript}
+        open={!!selectedScript}
+        onOpenChange={(open) => !open && setSelectedScript(null)}
+        onEdit={() => {
+          setEditingScript(selectedScript);
+          setShowScriptDialog(true);
+          setSelectedScript(null);
+        }}
+        onDelete={() => {
+          setDeletingScript(selectedScript);
+          setShowDeleteDialog(true);
+          setSelectedScript(null);
+        }}
+        loading={loading}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteScriptDialog
+        script={deletingScript}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        loading={loading}
+      />
     </div>
   );
 }

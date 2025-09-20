@@ -45,8 +45,191 @@ function getSupabaseAdmin() {
   return _supabaseAdmin;
 }
 
-export const supabaseAdmin = getSupabaseAdmin();
+// Exportar a função em vez da instância para evitar criação imediata
+export { getSupabaseAdmin as supabaseAdmin };
 
 // Debug: Verificar se os clientes foram criados corretamente
 console.log('🔧 Supabase client criado:', !!supabase);
-console.log('🔧 Supabase admin client criado:', !!supabaseAdmin);
+
+// =============================================================================
+// FUNÇÕES DE API PARA DASHBOARD
+// =============================================================================
+
+export interface DashboardFilters {
+  startDate?: string;
+  endDate?: string;
+  segment?: string;
+  temperature?: string;
+  source?: string;
+}
+
+export interface DashboardMetrics {
+  prospeccoesDoDia: number;
+  totalPeriodo: number;
+  inbound: {
+    total: number;
+    respostas: number;
+    reunioesAgendadas: number;
+    reunioesRealizadas: number;
+    noShow: number;
+    followUp: number;
+    vendas: number;
+    faturamento: number;
+    taxaNoShow: number;
+    taxaConversao: number;
+  };
+  outbound: {
+    total: number;
+    respostas: number;
+    reunioesAgendadas: number;
+    reunioesRealizadas: number;
+    noShow: number;
+    followUp: number;
+    vendas: number;
+    faturamento: number;
+    taxaNoShow: number;
+    taxaConversao: number;
+  };
+  taxaInbound: number;
+  taxaOutbound: number;
+  porTemperatura: Record<string, number>;
+  porSegmento: Array<{
+    segmento: string;
+    total: number;
+    vendas: number;
+    faturamento: number;
+  }>;
+}
+
+export interface ProspectDrilldown {
+  id: number;
+  contact_name: string;
+  company: string | null;
+  segment: string | null;
+  temperature: string | null;
+  source: string | null;
+  status: string;
+  deal_value: number | null;
+  closer: string | null;
+  date_prospect: string;
+  last_contact_date: string | null;
+}
+
+export interface DashboardDailyMetrics {
+  labels: string[];
+  datasets: {
+    prospeccoes: number[];
+    respostas: number[];
+    agendamentos: number[];
+    reunioes_realizadas: number[];
+    vendas: number[];
+    faturamento: number[];
+    inbound: number[];
+    outbound: number[];
+  };
+  summary: {
+    total_prospeccoes: number;
+    total_respostas: number;
+    total_agendamentos: number;
+    total_reunioes: number;
+    total_vendas: number;
+    total_faturamento: number;
+    taxa_resposta: number;
+    taxa_agendamento: number;
+    taxa_conversao: number;
+  };
+}
+
+/**
+ * Busca métricas agregadas do dashboard
+ */
+export async function getDashboardMetrics(filters: DashboardFilters = {}): Promise<DashboardMetrics> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Usuário não autenticado');
+  }
+
+  // Definir período padrão (último mês)
+  const endDate = filters.endDate || new Date().toISOString().split('T')[0];
+  const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const { data, error } = await supabase.rpc('get_dashboard_metrics', {
+    user_id: user.id,
+    start_date: startDate,
+    end_date: endDate,
+    filter_segment: filters.segment || null,
+    filter_temperature: filters.temperature || null,
+    filter_source: filters.source || null,
+  });
+
+  if (error) {
+    console.error('Erro ao buscar métricas do dashboard:', error);
+    throw new Error(`Erro ao carregar métricas: ${error.message}`);
+  }
+
+  return data as DashboardMetrics;
+}
+
+/**
+ * Busca lista detalhada de prospects para drill-down
+ */
+export async function getDashboardDrilldown(
+  metric: string,
+  filters: DashboardFilters = {}
+): Promise<ProspectDrilldown[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Usuário não autenticado');
+  }
+
+  // Definir período padrão (último mês)
+  const endDate = filters.endDate || new Date().toISOString().split('T')[0];
+  const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const { data, error } = await supabase.rpc('get_dashboard_drilldown', {
+    user_id: user.id,
+    metric_name: metric,
+    start_date: startDate,
+    end_date: endDate,
+    filter_segment: filters.segment || null,
+    filter_temperature: filters.temperature || null,
+    filter_source: filters.source || null,
+  });
+
+  if (error) {
+    console.error('Erro ao buscar drill-down do dashboard:', error);
+    throw new Error(`Erro ao carregar dados detalhados: ${error.message}`);
+  }
+
+  return (data || []) as ProspectDrilldown[];
+}
+
+/**
+ * Busca métricas diárias para gráficos de linha temporal
+ */
+export async function getDashboardDailyMetrics(filters: DashboardFilters = {}): Promise<DashboardDailyMetrics> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Usuário não autenticado');
+  }
+
+  // Definir período padrão (último mês)
+  const endDate = filters.endDate || new Date().toISOString().split('T')[0];
+  const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const { data, error } = await supabase.rpc('get_dashboard_daily_metrics', {
+    user_id: user.id,
+    start_date: startDate,
+    end_date: endDate,
+    filter_segment: filters.segment || null,
+    filter_temperature: filters.temperature || null,
+    filter_source: filters.source || null,
+  });
+
+  if (error) {
+    console.error('Erro ao buscar métricas diárias do dashboard:', error);
+    throw new Error(`Erro ao carregar métricas diárias: ${error.message}`);
+  }
+
+  return data as DashboardDailyMetrics;
+}

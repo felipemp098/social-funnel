@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     try {
       console.log(`📡 Executando query OTIMIZADA de perfil para userId: ${userId}`);
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabaseAdmin()
         .rpc('get_current_user_profile', { user_id: userId })
         .maybeSingle();
       
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           console.log(`📡 Executando query SUPER OTIMIZADA para userId: ${userId}`);
           // Usar função SQL otimizada que bypassa RLS
-          const { data, error } = await supabaseAdmin
+          const { data, error } = await supabaseAdmin()
             .rpc('get_current_user_data', { user_id: userId })
             .abortSignal(controller.signal)
             .maybeSingle();
