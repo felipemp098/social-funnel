@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,156 +17,67 @@ import {
   Sheet,
   CheckCircle,
   AlertCircle,
-  Clock
+  Clock,
+  Trash2,
+  Filter,
+  Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-
-// Mock data
-const clientesData = [
-  {
-    id: 1,
-    nome: "TechCorp Solutions",
-    proprietario: {
-      nome: "João Silva",
-      avatar: "",
-      iniciais: "JS"
-    },
-    nicho: "Tecnologia",
-    faixaFaturamento: "R$ 1M - 5M",
-    temperatura: "hot",
-    metas: {
-      respostas: 15,
-      reunioes: 8,
-      vendas: 3,
-      faturamento: 45000
-    },
-    planilha: {
-      conectada: true,
-      ultimoSync: "2024-01-15T10:30:00",
-      status: "sync"
-    },
-    prospeccoesAtivas: 23,
-    taxaConversao: 18.5
-  },
-  {
-    id: 2,
-    nome: "MedHealth Clínicas",
-    proprietario: {
-      nome: "Maria Santos",
-      avatar: "",
-      iniciais: "MS"
-    },
-    nicho: "Saúde",
-    faixaFaturamento: "R$ 500K - 1M",
-    temperatura: "warm",
-    metas: {
-      respostas: 12,
-      reunioes: 6,
-      vendas: 2,
-      faturamento: 28000
-    },
-    planilha: {
-      conectada: true,
-      ultimoSync: "2024-01-15T09:15:00",
-      status: "warning"
-    },
-    prospeccoesAtivas: 18,
-    taxaConversao: 14.2
-  },
-  {
-    id: 3,
-    nome: "Construtora Moderna",
-    proprietario: {
-      nome: "Pedro Oliveira",
-      avatar: "",
-      iniciais: "PO"
-    },
-    nicho: "Construção",
-    faixaFaturamento: "R$ 2M - 10M",
-    temperatura: "cold",
-    metas: {
-      respostas: 20,
-      reunioes: 10,
-      vendas: 4,
-      faturamento: 85000
-    },
-    planilha: {
-      conectada: false,
-      ultimoSync: null,
-      status: "disconnected"
-    },
-    prospeccoesAtivas: 5,
-    taxaConversao: 8.1
-  },
-  {
-    id: 4,
-    nome: "FinanceFlow",
-    proprietario: {
-      nome: "Ana Costa",
-      avatar: "",
-      iniciais: "AC"
-    },
-    nicho: "Finanças",
-    faixaFaturamento: "R$ 5M - 20M",
-    temperatura: "hot",
-    metas: {
-      respostas: 25,
-      reunioes: 12,
-      vendas: 5,
-      faturamento: 120000
-    },
-    planilha: {
-      conectada: true,
-      ultimoSync: "2024-01-15T11:45:00",
-      status: "sync"
-    },
-    prospeccoesAtivas: 31,
-    taxaConversao: 22.8
-  }
-];
+import { useClients, useClientMutations, useClientSegments, Client, ClientFilters } from "@/hooks/useClients";
+import { ClientDialog } from "@/components/ClientDialog";
+import { LinkSheetDialog } from "@/components/LinkSheetDialog";
+import { DeleteClientDialog } from "@/components/DeleteClientDialog";
 
 interface ClienteRowProps {
-  cliente: typeof clientesData[0];
-  onEdit: () => void;
-  onSync: () => void;
-  onConnect: () => void;
+  client: Client;
+  onEdit: (client: Client) => void;
+  onDelete: (client: Client) => void;
+  onLinkSheet: (client: Client) => void;
+  onOpenSheet: (client: Client) => void;
 }
 
-function ClienteRow({ cliente, onEdit, onSync, onConnect }: ClienteRowProps) {
-  const getTemperaturaColor = (temp: string) => {
+function ClienteRow({ client, onEdit, onDelete, onLinkSheet, onOpenSheet }: ClienteRowProps) {
+  const getTemperaturaColor = (temp: string | null) => {
     switch (temp) {
-      case "hot": return "bg-temperature-hot/20 text-red-400 border-red-400/30";
-      case "warm": return "bg-temperature-warm/20 text-orange-400 border-orange-400/30";
-      case "cold": return "bg-temperature-cold/20 text-blue-400 border-blue-400/30";
+      case "quente": return "bg-red-500/20 text-red-400 border-red-400/30";
+      case "morno": return "bg-orange-500/20 text-orange-400 border-orange-400/30";
+      case "frio": return "bg-blue-500/20 text-blue-400 border-blue-400/30";
       default: return "bg-muted text-muted-foreground";
     }
   };
 
-  const getTemperaturaIcon = (temp: string) => {
+  const getTemperaturaIcon = (temp: string | null) => {
     switch (temp) {
-      case "hot": return "🔥";
-      case "warm": return "🌡️";
-      case "cold": return "❄️";
+      case "quente": return "🔥";
+      case "morno": return "🌡️";
+      case "frio": return "❄️";
       default: return "🌡️";
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string | null) => {
     switch (status) {
-      case "sync": return <CheckCircle className="w-4 h-4 text-success" />;
-      case "warning": return <AlertCircle className="w-4 h-4 text-orange-400" />;
-      case "disconnected": return <AlertCircle className="w-4 h-4 text-destructive" />;
-      default: return <Clock className="w-4 h-4 text-muted-foreground" />;
+      case "linked_ok": return <CheckCircle className="w-4 h-4 text-success" />;
+      case "linked_complete": return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case "linked_warn": return <AlertCircle className="w-4 h-4 text-orange-400" />;
+      case "linked_pending": return <Clock className="w-4 h-4 text-blue-400" />;
+      case "not_linked":
+      default: 
+        return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null) => {
     switch (status) {
-      case "sync": return "Sincronizado";
-      case "warning": return "Atenção";
-      case "disconnected": return "Desconectado";
-      default: return "Verificando...";
+      case "linked_ok": return "Sincronizado";
+      case "linked_complete": return "Completo";
+      case "linked_warn": return "Com Alertas";
+      case "linked_pending": return "Aguardando";
+      case "not_linked":
+      default: 
+        return "Não Vinculada";
     }
   };
 
@@ -178,11 +89,16 @@ function ClienteRow({ cliente, onEdit, onSync, onConnect }: ClienteRowProps) {
     }).format(value);
   };
 
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return "Nunca";
+  const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const isSheetLinked = client.sheet_status !== 'not_linked' && client.sheet_url;
 
   return (
     <GlassCard className="p-4">
@@ -192,13 +108,15 @@ function ClienteRow({ cliente, onEdit, onSync, onConnect }: ClienteRowProps) {
           <div className="flex items-center gap-3">
             <Building className="w-5 h-5 text-primary flex-shrink-0" />
             <div className="min-w-0">
-              <h3 className="font-semibold text-foreground truncate">{cliente.nome}</h3>
+              <h3 className="font-semibold text-foreground truncate">{client.name}</h3>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {cliente.nicho}
-                </Badge>
+                {client.segment && (
+                  <Badge variant="outline" className="text-xs">
+                    {client.segment}
+                  </Badge>
+                )}
                 <span className="text-xs text-muted-foreground">
-                  {cliente.prospeccoesAtivas} prospecções ativas
+                  Criado em {formatDateTime(client.created_at)}
                 </span>
               </div>
             </div>
@@ -208,108 +126,154 @@ function ClienteRow({ cliente, onEdit, onSync, onConnect }: ClienteRowProps) {
         {/* Proprietário */}
         <div className="flex items-center gap-2 min-w-0">
           <Avatar className="w-8 h-8">
-            <AvatarImage src={cliente.proprietario.avatar} />
             <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
-              {cliente.proprietario.iniciais}
+              {getInitials(client.owner.name)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 hidden sm:block">
             <p className="text-sm font-medium text-foreground truncate">
-              {cliente.proprietario.nome}
+              {client.owner.name}
             </p>
-            <p className="text-xs text-muted-foreground">Proprietário</p>
+            <p className="text-xs text-muted-foreground capitalize">
+              {client.owner.role}
+            </p>
           </div>
         </div>
 
-        {/* Faturamento */}
-        <div className="hidden md:block min-w-0">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-success" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {cliente.faixaFaturamento}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {cliente.taxaConversao}% conversão
-              </p>
+        {/* Budget */}
+        {client.budget && (
+          <div className="hidden md:block min-w-0">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-success" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {client.budget}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Faturamento
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Temperatura */}
-        <div className="min-w-0">
-          <Badge className={getTemperaturaColor(cliente.temperatura)}>
-            <span className="mr-1">{getTemperaturaIcon(cliente.temperatura)}</span>
-            {cliente.temperatura === "hot" ? "Quente" : 
-             cliente.temperatura === "warm" ? "Morno" : "Frio"}
-          </Badge>
-        </div>
+        {client.temperature && (
+          <div className="min-w-0">
+            <Badge className={getTemperaturaColor(client.temperature)}>
+              <span className="mr-1">{getTemperaturaIcon(client.temperature)}</span>
+              {client.temperature === "quente" ? "Quente" : 
+               client.temperature === "morno" ? "Morno" : "Frio"}
+            </Badge>
+          </div>
+        )}
 
         {/* Metas (mini badges) */}
-        <div className="hidden lg:flex items-center gap-1">
-          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-            <Target className="w-3 h-3 mr-1" />
-            {cliente.metas.vendas}
-          </Badge>
-          <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/30">
-            {formatCurrency(cliente.metas.faturamento)}
-          </Badge>
-        </div>
+        {client.goals && (
+          <div className="hidden lg:flex items-center gap-1">
+            {client.goals.vendas && client.goals.vendas > 0 && (
+              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                <Target className="w-3 h-3 mr-1" />
+                {client.goals.vendas}
+              </Badge>
+            )}
+            {client.goals.faturamento && client.goals.faturamento > 0 && (
+              <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/30">
+                {formatCurrency(client.goals.faturamento)}
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Planilha Status */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex items-center gap-1">
-            {getStatusIcon(cliente.planilha.status)}
+            {getStatusIcon(client.sheet_status)}
             <span className="text-xs text-muted-foreground hidden xl:inline">
-              {getStatusText(cliente.planilha.status)}
+              {getStatusText(client.sheet_status)}
             </span>
           </div>
-          
-          {cliente.planilha.conectada && (
-            <div className="text-xs text-muted-foreground hidden xl:block">
-              {formatDateTime(cliente.planilha.ultimoSync)}
-            </div>
-          )}
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {cliente.planilha.conectada ? (
+          {isSheetLinked ? (
             <>
-              <Button size="sm" variant="outline" onClick={onSync}>
-                <RefreshCw className="w-4 h-4" />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => onLinkSheet(client)}
+                title="Gerenciar planilha"
+              >
+                <Sheet className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="outline" onClick={onEdit}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => onEdit(client)}
+                title="Editar cliente"
+              >
                 <Edit className="w-4 h-4" />
               </Button>
-              <Button size="sm" className="bg-gradient-primary">
-                <ExternalLink className="w-4 h-4" />
-              </Button>
+              {client.sheet_url && (
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-primary"
+                  onClick={() => onOpenSheet(client)}
+                  title="Abrir planilha"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+              )}
             </>
           ) : (
-            <Button size="sm" onClick={onConnect} className="bg-gradient-secondary">
-              <Sheet className="w-4 h-4 mr-1" />
-              Conectar
-            </Button>
+            <>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => onEdit(client)}
+                title="Editar cliente"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => onLinkSheet(client)} 
+                className="bg-gradient-secondary"
+                title="Vincular planilha"
+              >
+                <Sheet className="w-4 h-4 mr-1" />
+                Vincular
+              </Button>
+            </>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onDelete(client)}
+            className="text-destructive hover:text-destructive"
+            title="Deletar cliente"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </GlassCard>
   );
 }
 
-function EmptyState() {
+function EmptyState({ onAddClient }: { onAddClient: () => void }) {
   return (
     <GlassCard>
       <div className="text-center py-12">
         <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
         <h3 className="text-lg font-semibold text-foreground mb-2">
-          Nenhum cliente cadastrado
+          Nenhum cliente encontrado
         </h3>
         <p className="text-muted-foreground mb-6">
           Adicione seu primeiro cliente para começar a organizar suas prospecções
         </p>
-        <Button className="bg-gradient-primary">
+        <Button onClick={onAddClient} className="bg-gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Primeiro Cliente
         </Button>
@@ -318,45 +282,160 @@ function EmptyState() {
   );
 }
 
-export default function Clientes() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredClientes, setFilteredClientes] = useState(clientesData);
+function LoadingState() {
+  return (
+    <GlassCard>
+      <div className="text-center py-12">
+        <Loader2 className="w-8 h-8 text-primary mx-auto mb-4 animate-spin" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Carregando clientes...
+        </h3>
+        <p className="text-muted-foreground">
+          Aguarde enquanto buscamos seus dados
+        </p>
+      </div>
+    </GlassCard>
+  );
+}
 
+export default function Clientes() {
+  const [filters, setFilters] = useState<ClientFilters>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Dialog states
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
+  const [linkSheetDialogOpen, setLinkSheetDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  // Hooks
+  const { clients, loading, error, refetch } = useClients(filters);
+  const { segments } = useClientSegments();
+  const { 
+    createClient, 
+    updateClient, 
+    deleteClient, 
+    linkSheet, 
+    unlinkSheet, 
+    loading: mutationLoading 
+  } = useClientMutations();
+
+  // Computed values
+  const stats = useMemo(() => {
+    const totalClientes = clients.length;
+    const clientesConectados = clients.filter(c => c.sheet_status !== 'not_linked').length;
+    const metaFaturamentoTotal = clients.reduce((sum, c) => {
+      return sum + (c.goals?.faturamento || 0);
+    }, 0);
+
+    return {
+      totalClientes,
+      clientesConectados,
+      metaFaturamentoTotal,
+    };
+  }, [clients]);
+
+  // Event handlers
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (term.trim() === "") {
-      setFilteredClientes(clientesData);
-    } else {
-      const filtered = clientesData.filter(cliente =>
-        cliente.nome.toLowerCase().includes(term.toLowerCase()) ||
-        cliente.proprietario.nome.toLowerCase().includes(term.toLowerCase()) ||
-        cliente.nicho.toLowerCase().includes(term.toLowerCase())
-      );
-      setFilteredClientes(filtered);
+    setFilters(prev => ({ ...prev, search: term || undefined }));
+  };
+
+  const handleAddClient = () => {
+    setSelectedClient(null);
+    setClientDialogOpen(true);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setSelectedClient(client);
+    setClientDialogOpen(true);
+  };
+
+  const handleDeleteClient = (client: Client) => {
+    setSelectedClient(client);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedClient) return;
+    
+    const success = await deleteClient(selectedClient.id);
+    if (success) {
+      refetch();
     }
   };
 
-  const handleEdit = (cliente: typeof clientesData[0]) => {
-    toast.info("Edição em breve", {
-      description: `Edição de metas para ${cliente.nome} será implementada na próxima versão.`,
-    });
+  const handleLinkSheet = (client: Client) => {
+    setSelectedClient(client);
+    setLinkSheetDialogOpen(true);
   };
 
-  const handleSync = (cliente: typeof clientesData[0]) => {
-    toast.success("Sincronização iniciada", {
-      description: `Sincronizando dados de ${cliente.nome}...`,
-    });
+  const handleOpenSheet = (client: Client) => {
+    if (client.sheet_url) {
+      window.open(client.sheet_url, '_blank');
+    }
   };
 
-  const handleConnect = (cliente: typeof clientesData[0]) => {
-    toast.info("Conexão em breve", {
-      description: `Wizard de conexão para ${cliente.nome} será implementado na próxima versão.`,
-    });
+  const handleSaveClient = async (data: any) => {
+    let success = false;
+    
+    if (selectedClient) {
+      // Update existing client
+      const result = await updateClient(selectedClient.id, data);
+      success = !!result;
+    } else {
+      // Create new client
+      const result = await createClient(data);
+      success = !!result;
+    }
+
+    if (success) {
+      setClientDialogOpen(false);
+      refetch();
+    }
   };
 
-  const totalClientes = clientesData.length;
-  const clientesConectados = clientesData.filter(c => c.planilha.conectada).length;
-  const metaFaturamentoTotal = clientesData.reduce((sum, c) => sum + c.metas.faturamento, 0);
+  const handleSaveSheet = async (data: any) => {
+    if (!selectedClient) return false;
+
+    const success = await linkSheet(selectedClient.id, data);
+    if (success) {
+      refetch();
+    }
+    return success;
+  };
+
+  const handleUnlinkSheet = async () => {
+    if (!selectedClient) return false;
+
+    const success = await unlinkSheet(selectedClient.id);
+    if (success) {
+      refetch();
+    }
+    return success;
+  };
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <GlassCard>
+          <div className="text-center py-12">
+            <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Erro ao carregar clientes
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {error}
+            </p>
+            <Button onClick={refetch} className="bg-gradient-primary">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Tentar Novamente
+            </Button>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -369,7 +448,11 @@ export default function Clientes() {
           </p>
         </div>
         
-        <Button className="bg-gradient-primary hover:scale-105 transition-transform">
+        <Button 
+          onClick={handleAddClient}
+          className="bg-gradient-primary hover:scale-105 transition-transform"
+          disabled={mutationLoading}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Adicionar Cliente
         </Button>
@@ -384,7 +467,7 @@ export default function Clientes() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total de Clientes</p>
-              <p className="text-2xl font-bold text-foreground">{totalClientes}</p>
+              <p className="text-2xl font-bold text-foreground">{stats.totalClientes}</p>
             </div>
           </div>
         </GlassCard>
@@ -397,7 +480,7 @@ export default function Clientes() {
             <div>
               <p className="text-sm text-muted-foreground">Planilhas Conectadas</p>
               <p className="text-2xl font-bold text-foreground">
-                {clientesConectados}/{totalClientes}
+                {stats.clientesConectados}/{stats.totalClientes}
               </p>
             </div>
           </div>
@@ -415,49 +498,145 @@ export default function Clientes() {
                   style: 'currency',
                   currency: 'BRL',
                   notation: 'compact'
-                }).format(metaFaturamentoTotal)}
+                }).format(stats.metaFaturamentoTotal)}
               </p>
             </div>
           </div>
         </GlassCard>
       </div>
 
-      {/* Search */}
+      {/* Filters */}
       <GlassCard>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Buscar cliente, proprietário ou nicho..."
+              placeholder="Buscar cliente..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-10 bg-background/50"
             />
           </div>
+
+          <Select
+            value={filters.segment || 'all'}
+            onValueChange={(value) => setFilters(prev => ({ 
+              ...prev, 
+              segment: value === 'all' ? undefined : value 
+            }))}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Todos os segmentos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os segmentos</SelectItem>
+              {segments.map((segment) => (
+                <SelectItem key={segment.segment} value={segment.segment}>
+                  {segment.segment} ({segment.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.temperature || 'all'}
+            onValueChange={(value) => setFilters(prev => ({ 
+              ...prev, 
+              temperature: (value === 'all' ? undefined : value) as any
+            }))}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Temperatura" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="quente">🔥 Quente</SelectItem>
+              <SelectItem value="morno">🌡️ Morno</SelectItem>
+              <SelectItem value="frio">❄️ Frio</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.status || 'all'}
+            onValueChange={(value) => setFilters(prev => ({ 
+              ...prev, 
+              status: (value === 'all' ? undefined : value) as any
+            }))}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Status da planilha" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="not_linked">Não vinculada</SelectItem>
+              <SelectItem value="linked_pending">Aguardando</SelectItem>
+              <SelectItem value="linked_warn">Com alertas</SelectItem>
+              <SelectItem value="linked_ok">Sincronizada</SelectItem>
+              <SelectItem value="linked_complete">Completa</SelectItem>
+            </SelectContent>
+          </Select>
           
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CheckCircle className="w-4 h-4 text-success" />
-            <span>{filteredClientes.length} clientes encontrados</span>
+            <span>{clients.length} clientes encontrados</span>
           </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refetch}
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </GlassCard>
 
       {/* Clientes List */}
       <div className="space-y-4">
-        {filteredClientes.length > 0 ? (
-          filteredClientes.map((cliente) => (
+        {loading ? (
+          <LoadingState />
+        ) : clients.length > 0 ? (
+          clients.map((client) => (
             <ClienteRow
-              key={cliente.id}
-              cliente={cliente}
-              onEdit={() => handleEdit(cliente)}
-              onSync={() => handleSync(cliente)}
-              onConnect={() => handleConnect(cliente)}
+              key={client.id}
+              client={client}
+              onEdit={handleEditClient}
+              onDelete={handleDeleteClient}
+              onLinkSheet={handleLinkSheet}
+              onOpenSheet={handleOpenSheet}
             />
           ))
         ) : (
-          <EmptyState />
+          <EmptyState onAddClient={handleAddClient} />
         )}
       </div>
+
+      {/* Dialogs */}
+      <ClientDialog
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        client={selectedClient}
+        onSave={handleSaveClient}
+        loading={mutationLoading}
+      />
+
+      <LinkSheetDialog
+        open={linkSheetDialogOpen}
+        onOpenChange={setLinkSheetDialogOpen}
+        client={selectedClient}
+        onSave={handleSaveSheet}
+        onUnlink={handleUnlinkSheet}
+        loading={mutationLoading}
+      />
+
+      <DeleteClientDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        client={selectedClient}
+        onConfirm={handleConfirmDelete}
+        loading={mutationLoading}
+      />
     </div>
   );
 }

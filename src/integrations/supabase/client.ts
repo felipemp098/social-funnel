@@ -21,11 +21,32 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Cliente admin (para operações administrativas)
-export const supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    storage: undefined, // Não usar storage para evitar conflitos
+// Singleton para cliente admin para evitar múltiplas instâncias
+let _supabaseAdmin: ReturnType<typeof createClient<Database>> | null = null;
+
+function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    console.log('🏗️ Criando nova instância do Supabase Admin');
+    _supabaseAdmin = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        storage: undefined, // Não usar storage para evitar conflitos
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'social-funnel-admin'
+        }
+      }
+    });
+  } else {
+    console.log('♻️ Reutilizando instância existente do Supabase Admin');
   }
-});
+  return _supabaseAdmin;
+}
+
+export const supabaseAdmin = getSupabaseAdmin();
+
+// Debug: Verificar se os clientes foram criados corretamente
+console.log('🔧 Supabase client criado:', !!supabase);
+console.log('🔧 Supabase admin client criado:', !!supabaseAdmin);

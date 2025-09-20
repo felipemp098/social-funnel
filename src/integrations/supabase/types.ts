@@ -60,11 +60,14 @@ export type Database = {
           owner_id: string
           name: string
           segment: string | null
-          revenue_range: string | null
-          temperature: 'hot' | 'warm' | 'cold' | null
+          budget: string | null
+          temperature: 'frio' | 'morno' | 'quente' | null
           notes: string | null
-          active_prospects: number | null
-          conversion_rate: number | null
+          goals: Json | null
+          sheet_url: string | null
+          sheet_tab: string | null
+          sheet_mapping: Json | null
+          sheet_status: 'not_linked' | 'linked_pending' | 'linked_warn' | 'linked_ok' | 'linked_complete' | null
           created_at: string | null
           updated_at: string | null
         }
@@ -73,11 +76,14 @@ export type Database = {
           owner_id: string
           name: string
           segment?: string | null
-          revenue_range?: string | null
-          temperature?: 'hot' | 'warm' | 'cold' | null
+          budget?: string | null
+          temperature?: 'frio' | 'morno' | 'quente' | null
           notes?: string | null
-          active_prospects?: number | null
-          conversion_rate?: number | null
+          goals?: Json | null
+          sheet_url?: string | null
+          sheet_tab?: string | null
+          sheet_mapping?: Json | null
+          sheet_status?: 'not_linked' | 'linked_pending' | 'linked_warn' | 'linked_ok' | 'linked_complete' | null
           created_at?: string | null
           updated_at?: string | null
         }
@@ -86,11 +92,14 @@ export type Database = {
           owner_id?: string
           name?: string
           segment?: string | null
-          revenue_range?: string | null
-          temperature?: 'hot' | 'warm' | 'cold' | null
+          budget?: string | null
+          temperature?: 'frio' | 'morno' | 'quente' | null
           notes?: string | null
-          active_prospects?: number | null
-          conversion_rate?: number | null
+          goals?: Json | null
+          sheet_url?: string | null
+          sheet_tab?: string | null
+          sheet_mapping?: Json | null
+          sheet_status?: 'not_linked' | 'linked_pending' | 'linked_warn' | 'linked_ok' | 'linked_complete' | null
           created_at?: string | null
           updated_at?: string | null
         }

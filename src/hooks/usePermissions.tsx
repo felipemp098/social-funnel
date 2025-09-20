@@ -3,13 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { AppUser, UserHierarchyStats } from '@/integrations/supabase/types';
 
+// Interface estendida para incluir dados do criador
+interface AppUserWithCreator extends AppUser {
+  creator_email?: string;
+}
+
 interface PermissionsHook {
   // Funções de verificação de permissão
   canManage: (ownerId: string) => Promise<boolean>;
   canCreateUser: (role: 'admin' | 'manager' | 'user') => boolean;
   
   // Dados de hierarquia
-  managedUsers: AppUser[];
+  managedUsers: AppUserWithCreator[];
   hierarchyStats: UserHierarchyStats[];
   
   // Estados
@@ -24,7 +29,7 @@ interface PermissionsHook {
 
 export const usePermissions = (): PermissionsHook => {
   const { user, appUser, isAdmin, isManager } = useAuth();
-  const [managedUsers, setManagedUsers] = useState<AppUser[]>([]);
+  const [managedUsers, setManagedUsers] = useState<AppUserWithCreator[]>([]);
   const [hierarchyStats, setHierarchyStats] = useState<UserHierarchyStats[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,22 +64,50 @@ export const usePermissions = (): PermissionsHook => {
     return false;
   };
 
-  // Função para buscar usuários gerenciados
+  // Função para buscar usuários gerenciados baseado na hierarquia
   const fetchManagedUsers = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !appUser) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      // Query com JOIN para buscar dados do criador
+      let query = supabase
         .from('app_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          creator:created_by(email)
+        `);
+
+      // Aplicar filtros baseados na hierarquia
+      if (appUser.role === 'admin') {
+        // Admin vê todos os usuários
+        console.log('🔍 Admin: buscando todos os usuários');
+      } else if (appUser.role === 'manager') {
+        // Manager vê apenas usuários que ele criou diretamente
+        console.log('🔍 Manager: buscando apenas usuários criados por ele');
+        query = query.eq('created_by', user.id);
+      } else if (appUser.role === 'user') {
+        // User não deve ver nenhum outro usuário
+        console.log('🔍 User: não tem permissão para ver outros usuários');
+        setManagedUsers([]);
+        return;
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setManagedUsers(data || []);
+      console.log('📊 Usuários encontrados:', data?.length || 0);
+      
+      // Transformar os dados para incluir o email do criador
+      const usersWithCreator: AppUserWithCreator[] = (data || []).map(user => ({
+        ...user,
+        creator_email: user.creator?.email || null
+      }));
+
+      setManagedUsers(usersWithCreator);
     } catch (err: any) {
       setError(err.message);
       console.error('Erro ao buscar usuários gerenciados:', err);
@@ -82,6 +115,7 @@ export const usePermissions = (): PermissionsHook => {
       setLoading(false);
     }
   };
+
 
   // Função para buscar estatísticas da hierarquia
   const fetchHierarchyStats = async () => {

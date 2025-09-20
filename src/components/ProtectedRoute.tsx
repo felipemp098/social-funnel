@@ -9,83 +9,72 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, appUser, loading, refreshAppUser } = useAuth();
   const navigate = useNavigate();
-  const [waitingForAppUser, setWaitingForAppUser] = useState(false);
-  const [hasTriedRefresh, setHasTriedRefresh] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Hook 1: Redirecionar para auth se não estiver logado
+  // Hook simplificado: apenas verificar estados básicos
   useEffect(() => {
-    if (!loading && !user) {
+    // Se ainda está carregando inicial, aguardar
+    if (loading) {
+      return;
+    }
+
+    // Se não tem usuário, redirecionar para auth
+    if (!user) {
       console.log('🔄 Redirecionando para /auth - usuário não logado');
       navigate("/auth");
+      return;
     }
-  }, [user, loading, navigate]);
 
-  // Hook 2: Tentar buscar appUser UMA VEZ se não existir
-  useEffect(() => {
-    console.log('🔍 ProtectedRoute Hook 2 - Estados:', { 
-      user: !!user, 
-      appUser: !!appUser, 
-      loading, 
-      waitingForAppUser, 
-      hasTriedRefresh 
-    });
-    
-    if (user && !appUser && !loading && !waitingForAppUser && !hasTriedRefresh) {
-      console.log('👤 Usuário logado sem appUser, tentando buscar...');
-      setWaitingForAppUser(true);
-      setHasTriedRefresh(true);
+    // Se tem usuário e appUser, marcar como inicializado
+    if (user && appUser) {
+      console.log('✅ ProtectedRoute inicializado para:', appUser.email);
+      setHasInitialized(true);
+      return;
+    }
+
+    // Se tem usuário mas não tem appUser, e ainda não inicializou
+    if (user && !appUser && !hasInitialized) {
+      console.log('⚠️ Usuário sem appUser detectado');
       
-      const timer = setTimeout(async () => {
-        console.log('🔄 Tentando buscar appUser...');
-        await refreshAppUser();
-        console.log('✅ refreshAppUser concluído');
-        setWaitingForAppUser(false);
-      }, 2000);
+      // Aguardar um tempo menor antes de assumir que é primeiro acesso
+      const timer = setTimeout(() => {
+        if (!appUser) {
+          console.log('🔄 AppUser não carregado após aguardar - redirecionando para first-setup');
+          navigate("/first-setup");
+        }
+      }, 5000); // Reduzido para 5 segundos
 
       return () => clearTimeout(timer);
     }
-  }, [user, appUser, loading, waitingForAppUser, hasTriedRefresh, refreshAppUser]);
+  }, [user, appUser, loading, navigate, hasInitialized]);
 
-  // Hook 3: Redirecionar para FirstSetup se appUser não foi encontrado
+  // Hook para verificar first_login e proteção de rotas
   useEffect(() => {
-    console.log('🔍 ProtectedRoute Hook 3 - Estados:', { 
-      user: !!user, 
-      appUser: !!appUser, 
-      loading, 
-      waitingForAppUser, 
-      hasTriedRefresh 
-    });
-    
-    if (user && !appUser && !loading && !waitingForAppUser && hasTriedRefresh) {
-      console.log('⚠️ Usuário sem appUser após tentativa, redirecionando para FirstSetup...');
-      navigate("/first-setup");
-    }
-  }, [user, appUser, loading, waitingForAppUser, hasTriedRefresh, navigate]);
+    if (user && appUser && hasInitialized) {
+      // Verificar se usuário precisa definir senha (primeiro acesso)
+      if (appUser.first_login) {
+        console.log('🔐 Primeiro acesso detectado, redirecionando para definir senha...');
+        navigate("/set-password");
+        return;
+      }
 
-  // Hook 4: Verificar se usuário precisa definir senha (primeiro acesso)
-  useEffect(() => {
-    if (user && appUser && appUser.first_login) {
-      console.log('🔐 Primeiro acesso detectado, redirecionando para definir senha...');
-      navigate("/set-password");
+      // Proteger rotas baseado na hierarquia de usuários
+      const currentPath = window.location.pathname;
+      if (currentPath === "/usuarios" && appUser.role === 'user') {
+        console.log('🚫 Usuário do tipo "user" tentou acessar /usuarios, redirecionando...');
+        navigate("/");
+        return;
+      }
     }
-  }, [user, appUser, navigate]);
+  }, [user, appUser, hasInitialized, navigate]);
 
-  // Reset hasTriedRefresh quando user muda
-  useEffect(() => {
-    if (user?.id) {
-      setHasTriedRefresh(false);
-    }
-  }, [user?.id]);
-
-  // Estados de loading
-  if (loading || waitingForAppUser) {
+  // Estados de loading - APENAS durante carregamento inicial
+  if (loading && !hasInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/10">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-2">
-            {waitingForAppUser ? "Configurando conta..." : "Carregando..."}
-          </p>
+          <p className="text-muted-foreground mt-2">Carregando...</p>
         </div>
       </div>
     );

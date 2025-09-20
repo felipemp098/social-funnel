@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DeleteUserDialog } from "@/components/DeleteUserDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase, supabaseAdmin } from "@/integrations/supabase/client";
 import { AppUser, UserRole } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { getInitialsFromEmailOrName } from "@/utils/userUtils";
 import { 
   Users, 
   Plus, 
@@ -33,11 +35,28 @@ import {
   RefreshCw
 } from "lucide-react";
 
-interface UserWithCreator extends AppUser {
+interface UserWithCreator {
+  id: string;
+  email: string;
+  role: 'admin' | 'manager' | 'user';
+  created_by: string | null;
+  user_created_at: string;
+  user_updated_at: string;
+  full_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  preferences: any;
+  profile_created_at: string | null;
+  profile_updated_at: string | null;
+  display_name: string | null;
+  effective_avatar: string | null;
+  // Campos adicionais para funcionalidade
   creator?: AppUser;
   isPending?: boolean;
   inviteId?: string;
   expiresAt?: string;
+  first_login?: boolean;
 }
 
 interface CreateUserForm {
@@ -71,6 +90,8 @@ export default function UsuariosTab() {
 
   // Estados para exclusão
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserWithCreator | null>(null);
 
   // Estados para edição
   const [editingUser, setEditingUser] = useState<UserWithCreator | null>(null);
@@ -87,7 +108,7 @@ export default function UsuariosTab() {
     console.log('🔄 Carregando usuários...');
     setIsLoading(true);
     try {
-      // Carregar usuários confirmados
+      // Carregar usuários confirmados com dados do criador
       const { data: confirmedUsers, error: usersError } = await supabase
         .from('app_users')
         .select(`
@@ -95,6 +116,27 @@ export default function UsuariosTab() {
           creator:created_by(id, email, role)
         `)
         .order('created_at', { ascending: false });
+
+      // Carregar perfis separadamente
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, avatar_url, bio, preferences');
+
+      // Combinar dados de usuários com perfis
+      const usersWithProfiles = confirmedUsers?.map(user => {
+        const profile = profiles?.find(p => p.id === user.id);
+        return {
+          ...user,
+          full_name: profile?.full_name || null,
+          phone: profile?.phone || null,
+          avatar_url: profile?.avatar_url || null,
+          bio: profile?.bio || null,
+          preferences: profile?.preferences || null,
+          display_name: profile?.full_name || user.email,
+          user_created_at: user.created_at,
+          user_updated_at: user.updated_at,
+        };
+      }) || [];
 
       if (usersError) {
         console.error('❌ Erro ao carregar usuários:', usersError);
@@ -135,7 +177,7 @@ export default function UsuariosTab() {
       
       // Combinar usuários confirmados e pendentes
       const allUsers = [
-        ...(confirmedUsers || []).map(user => ({ ...user, isActive: true })),
+        ...usersWithProfiles.map(user => ({ ...user, isActive: true })),
         ...pendingInvites
       ];
       
@@ -164,7 +206,8 @@ export default function UsuariosTab() {
 
     if (searchTerm.trim()) {
       filtered = filtered.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.full_name && user.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -355,39 +398,40 @@ export default function UsuariosTab() {
     }
   };
 
-  const handleDeleteUser = async (user: UserWithCreator) => {
+  const handleDeleteUser = (user: UserWithCreator) => {
     if (!appUser || !canDeleteUser(user)) return;
+    
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirm(`Tem certeza que deseja excluir o usuário ${user.email}?\n\nEsta ação não pode ser desfeita.`)) {
-      return;
-    }
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete || !appUser || !canDeleteUser(userToDelete)) return;
 
-    setDeletingUserId(user.id);
-    console.log('🗑️ Excluindo usuário:', user.email);
+    setDeletingUserId(userToDelete.id);
+    console.log('🗑️ Excluindo usuário:', userToDelete.email);
 
     try {
       // Deletar de app_users
       const { error: appUserError } = await supabase
         .from('app_users')
         .delete()
-        .eq('id', user.id);
+        .eq('id', userToDelete.id);
 
       if (appUserError) {
-        // Se falhou, deletar usuário do auth
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
         throw appUserError;
       }
 
       // Deletar do auth.users usando Service Role
       try {
-        await supabaseAdmin.auth.admin.deleteUser(user.id);
+        await supabaseAdmin.auth.admin.deleteUser(userToDelete.id);
         console.log('✅ Usuário deletado do auth.users');
       } catch (authError) {
         console.warn('⚠️ Não foi possível deletar do auth.users:', authError);
       }
 
       await loadUsers();
-      toast.success(`Usuário ${user.email} excluído com sucesso`);
+      toast.success(`Usuário ${userToDelete.email} excluído com sucesso`);
       
     } catch (error) {
       console.error('❌ Erro ao excluir usuário:', error);
@@ -549,7 +593,7 @@ export default function UsuariosTab() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Buscar por e-mail..."
+                placeholder="Buscar por nome ou e-mail..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-background/50"
@@ -752,14 +796,19 @@ export default function UsuariosTab() {
                         {user.isPending ? (
                           <Mail className="w-5 h-5" />
                         ) : (
-                          getInitials(user.email)
+                          getInitialsFromEmailOrName(user.full_name || user.email)
                         )}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground truncate">{user.email}</p>
+                        <p className="font-medium text-foreground truncate">
+                          {user.full_name || user.email}
+                        </p>
+                        {user.full_name && (
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        )}
                         
                         {/* Badge de Status */}
                         {user.isPending ? (
@@ -789,7 +838,7 @@ export default function UsuariosTab() {
                       <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                         <span>{user.isPending ? 'Convidado' : 'Criado'} por: {user.creator?.email || 'Sistema'}</span>
                         <span>•</span>
-                        <span>{new Date(user.created_at).toLocaleDateString('pt-BR')}</span>
+                        <span>{new Date(user.user_created_at).toLocaleDateString('pt-BR')}</span>
                         {user.isPending && user.expiresAt && (
                           <>
                             <span>•</span>
@@ -1005,6 +1054,15 @@ export default function UsuariosTab() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Exclusão de Usuário */}
+      <DeleteUserDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        user={userToDelete}
+        onConfirm={handleConfirmDeleteUser}
+        loading={!!deletingUserId}
+      />
     </div>
   );
 }

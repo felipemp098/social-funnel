@@ -20,6 +20,7 @@ import {
   Target,
   UserCog
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const navigationItems = [
   {
@@ -73,6 +74,7 @@ export function AppSidebar() {
   const { open: collapsed } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const { appUser } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -92,6 +94,17 @@ export function AppSidebar() {
     `;
   };
 
+  // Filtrar itens de navegação baseado na hierarquia
+  const getVisibleNavigationItems = () => {
+    return navigationItems.filter(item => {
+      // Ocultar menu "Usuários" para usuários do tipo "user"
+      if (item.url === "/usuarios" && appUser?.role === 'user') {
+        return false;
+      }
+      return true;
+    });
+  };
+
   return (
     <Sidebar className={`glass-card border-r border-sidebar-border/30 ${!collapsed ? "w-[72px]" : "w-64"}`}>
       <SidebarContent className="pt-4">
@@ -102,7 +115,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {navigationItems.map((item) => (
+              {getVisibleNavigationItems().map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="p-0">
                     <NavLink to={item.url} className={getNavClassName(item.url)}>
