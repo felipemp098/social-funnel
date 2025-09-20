@@ -307,7 +307,7 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
                       className="absolute text-xs text-muted-foreground font-medium z-10"
                       style={{
                         left: `${x}%`,
-                        bottom: '8px',
+                        bottom: '-8px',
                         transform: 'translateX(-50%)',
                       }}
                     >
@@ -321,7 +321,7 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
                         style={{ 
                           backgroundColor: currentConfig.color,
                           left: `${x}%`,
-                          top: `${Math.max(y - 8, 0)}%`,
+                          top: `${Math.max(y - 12, 0)}%`,
                           transform: 'translateX(-50%)',
                         }}
                       >
