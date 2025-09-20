@@ -73,7 +73,7 @@ const METRIC_CONFIG = {
 
 export function DashboardChart({ data, loading, error, onRetry }: DashboardChartProps) {
   const [selectedMetric, setSelectedMetric] = useState<ChartMetric>('prospeccoes');
-  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [chartType, setChartType] = useState<'line' | 'bar'>('bar');
 
   // Loading state
   if (loading) {
@@ -127,14 +127,25 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
   const currentConfig = METRIC_CONFIG[selectedMetric];
   const currentData = data.datasets[selectedMetric];
   const maxValue = Math.max(...currentData);
-  const minValue = Math.min(...currentData.filter(v => v > 0)); // Ignorar zeros para o mínimo
-  
-  // Calcular range para melhor visualização
-  const range = maxValue - (minValue || 0);
-  const hasVariation = range > 0;
-  
-  // Verificar se a variação é significativa (mais de 20% de diferença)
-  const significantVariation = maxValue > 0 && (range / maxValue) > 0.2;
+  const minValue = Math.min(...currentData.filter(v => v > 0));
+
+  // Função para calcular altura baseada no valor
+  const calculateHeight = (value: number): number => {
+    if (value <= 0 || maxValue <= 0) return 0;
+    
+    const normalizedValue = value / maxValue;
+    if (normalizedValue === 1) return 90;
+    if (normalizedValue >= 0.9) return 75;
+    if (normalizedValue >= 0.8) return 60;
+    if (normalizedValue >= 0.7) return 45;
+    if (normalizedValue >= 0.6) return 35;
+    if (normalizedValue >= 0.5) return 28;
+    if (normalizedValue >= 0.4) return 22;
+    if (normalizedValue >= 0.3) return 17;
+    if (normalizedValue >= 0.2) return 12;
+    if (normalizedValue >= 0.1) return 8;
+    return 5;
+  };
 
   return (
     <GlassCard>
@@ -181,68 +192,138 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
 
         {/* Chart Area */}
         <div className="relative h-64 p-4 rounded-lg" style={{ backgroundColor: currentConfig.bgColor }}>
-          <div className="flex items-end justify-between h-full space-x-1">
-            {data.labels.map((label, index) => {
-              const value = currentData[index];
-              // Calcular altura com escala ultra dramática
-              let height = 0;
-              if (value > 0) {
-                if (maxValue > 0) {
-                  // Sempre usar escala do 0 ao máximo, mas com curvas diferentes
-                  const normalizedValue = value / maxValue;
-                  
-                  // Aplicar escala não-linear para dramatizar diferenças
-                  let scaledValue;
-                  if (normalizedValue === 1) {
-                    scaledValue = 1; // Máximo sempre 100%
-                  } else if (normalizedValue >= 0.8) {
-                    scaledValue = 0.7 + (normalizedValue - 0.8) * 1.5; // 70-100%
-                  } else if (normalizedValue >= 0.6) {
-                    scaledValue = 0.5 + (normalizedValue - 0.6) * 1.0; // 50-70%
-                  } else if (normalizedValue >= 0.4) {
-                    scaledValue = 0.3 + (normalizedValue - 0.4) * 1.0; // 30-50%
-                  } else if (normalizedValue >= 0.2) {
-                    scaledValue = 0.15 + (normalizedValue - 0.2) * 0.75; // 15-30%
-                  } else {
-                    scaledValue = normalizedValue * 0.75; // 0-15%
-                  }
-                  
-                  height = Math.max(5, scaledValue * 95 + 5);
-                } else {
-                  height = 60;
-                }
-              }
-              
-              return (
-                <div key={index} className="flex flex-col items-center flex-1">
-                  {/* Bar/Line Point */}
-                  <div className="flex items-end h-full mb-2 relative">
-                    {chartType === 'bar' ? (
+          {chartType === 'bar' ? (
+            /* Modo Barras */
+            <div className="flex items-end justify-between h-full space-x-1">
+              {data.labels.map((label, index) => {
+                const value = currentData[index];
+                const height = calculateHeight(value);
+                
+                return (
+                  <div key={index} className="flex flex-col items-center flex-1">
+                    <div className="flex items-end h-full mb-2 relative">
                       <div
-                        className="w-full min-w-[8px] rounded-t transition-all duration-300 hover:opacity-80"
+                        className="w-full min-w-[12px] rounded-t transition-all duration-300 hover:opacity-80 cursor-pointer"
                         style={{
                           height: `${height}%`,
                           backgroundColor: currentConfig.color,
-                          minHeight: value > 0 ? '2px' : '0px',
+                          minHeight: value > 0 ? '8px' : '0px',
                         }}
                         title={`${label}: ${selectedMetric === 'faturamento' ? dashboardUtils.formatCurrency(value) : value}`}
                       />
-                    ) : (
-                      <div
-                        className="w-3 h-3 rounded-full border-2 bg-background"
-                        style={{
-                          borderColor: currentConfig.color,
-                          backgroundColor: value > 0 ? currentConfig.color : 'transparent',
-                        }}
-                        title={`${label}: ${selectedMetric === 'faturamento' ? dashboardUtils.formatCurrency(value) : value}`}
-                      />
-                    )}
+                      
+                      {/* Value Label */}
+                      {value > 0 && (
+                        <div
+                          className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium px-1 py-0.5 rounded text-white whitespace-nowrap"
+                          style={{ backgroundColor: currentConfig.color }}
+                        >
+                          {selectedMetric === 'faturamento' 
+                            ? `R$ ${(value / 1000).toFixed(0)}k`
+                            : value
+                          }
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground font-medium">
+                      {label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Modo Linha */
+            <div className="relative w-full h-full">
+              {/* SVG para linha e área */}
+              <svg 
+                className="absolute inset-0 w-full h-full pointer-events-none z-0"
+                style={{ marginBottom: '32px' }}
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id={`gradient-${selectedMetric}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor={currentConfig.color} stopOpacity="0.3" />
+                    <stop offset="100%" stopColor={currentConfig.color} stopOpacity="0.1" />
+                  </linearGradient>
+                </defs>
+                
+                {/* Área preenchida */}
+                <path
+                  d={`M 0,100 ${data.labels.map((label, index) => {
+                    const value = currentData[index];
+                    const height = calculateHeight(value);
+                    const x = (index / Math.max(data.labels.length - 1, 1)) * 100;
+                    const y = 100 - height;
+                    return `L ${x},${y}`;
+                  }).join(' ')} L 100,100 Z`}
+                  fill={`url(#gradient-${selectedMetric})`}
+                />
+                
+                {/* Linha principal */}
+                <polyline
+                  points={data.labels.map((label, index) => {
+                    const value = currentData[index];
+                    const height = calculateHeight(value);
+                    const x = (index / Math.max(data.labels.length - 1, 1)) * 100;
+                    const y = 100 - height;
+                    return `${x},${y}`;
+                  }).join(' ')}
+                  stroke={currentConfig.color}
+                  strokeWidth="0.8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+
+              {/* Pontos posicionados com coordenadas absolutas */}
+              {data.labels.map((label, index) => {
+                const value = currentData[index];
+                const height = calculateHeight(value);
+                const x = (index / Math.max(data.labels.length - 1, 1)) * 100;
+                const y = 100 - height;
+                
+                return (
+                  <div key={index}>
+                    {/* Ponto */}
+                    <div
+                      className="w-4 h-4 rounded-full border-2 bg-background cursor-pointer absolute z-10"
+                      style={{
+                        borderColor: currentConfig.color,
+                        backgroundColor: value > 0 ? currentConfig.color : 'transparent',
+                        left: `${x}%`,
+                        top: `${y}%`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      title={`${label}: ${selectedMetric === 'faturamento' ? dashboardUtils.formatCurrency(value) : value}`}
+                    />
+                    
+                    {/* Label da data */}
+                    <div 
+                      className="absolute text-xs text-muted-foreground font-medium z-10"
+                      style={{
+                        left: `${x}%`,
+                        bottom: '8px',
+                        transform: 'translateX(-50%)',
+                      }}
+                    >
+                      {label}
+                    </div>
                     
                     {/* Value Label */}
                     {value > 0 && (
                       <div
-                        className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-medium px-1 py-0.5 rounded text-white whitespace-nowrap"
-                        style={{ backgroundColor: currentConfig.color }}
+                        className="absolute text-xs font-medium px-1 py-0.5 rounded text-white whitespace-nowrap z-10"
+                        style={{ 
+                          backgroundColor: currentConfig.color,
+                          left: `${x}%`,
+                          top: `${Math.max(y - 8, 0)}%`,
+                          transform: 'translateX(-50%)',
+                        }}
                       >
                         {selectedMetric === 'faturamento' 
                           ? `R$ ${(value / 1000).toFixed(0)}k`
@@ -251,15 +332,10 @@ export function DashboardChart({ data, loading, error, onRetry }: DashboardChart
                       </div>
                     )}
                   </div>
-                  
-                  {/* Date Label */}
-                  <div className="text-xs text-muted-foreground font-medium">
-                    {label}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Summary Stats */}
