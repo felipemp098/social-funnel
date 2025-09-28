@@ -18,7 +18,8 @@ import {
   TrendingUp,
   MessageSquare,
   Target,
-  UserCog
+  UserCog,
+  UserPlus
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -30,6 +31,12 @@ const navigationItems = [
     description: "Visão geral e KPIs"
   },
   {
+    title: "Prospects",
+    url: "/prospects",
+    icon: UserPlus,
+    description: "Gestão de prospects"
+  },
+  {
     title: "Scripts",
     url: "/scripts",
     icon: MessageSquare,
@@ -39,7 +46,7 @@ const navigationItems = [
     title: "Clientes",
     url: "/clientes",
     icon: Users,
-    description: "Gestão de prospectos"
+    description: "Gestão de clientes"
   },
   {
     title: "Usuários",

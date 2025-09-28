@@ -7,6 +7,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { AuthProvider } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
+import Prospects from "./pages/Prospects";
 import Scripts from "./pages/Scripts";
 import Clientes from "./pages/Clientes";
 import Usuarios from "./pages/Usuarios";
@@ -35,6 +36,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<Dashboard />} />
+              <Route path="prospects" element={<Prospects />} />
               <Route path="scripts" element={<Scripts />} />
               <Route path="clientes" element={<Clientes />} />
               <Route path="usuarios" element={<Usuarios />} />
